@@ -116,7 +116,7 @@ export class ComponentDialog<O extends object = {}> extends Dialog<O> {
         outerDC.activeDialog.state[PERSISTED_DIALOG_STATE] = dialogState;
         const innerDC: DialogContext = new DialogContext(this.dialogs, outerDC.context, dialogState, outerDC.conversationState, outerDC.userState);
         if (this.inheritParentDialogs) { innerDC.parent = outerDC; }
-        const turnResult: DialogTurnResult<any> = await this.onBeginDialog(innerDC, options);
+        const turnResult: DialogTurnResult<any> = await this.onBeginDialog(innerDC, options, dialogState);
 
         // Check for end of inner dialog
         if (turnResult.status !== DialogTurnStatus.waiting) {
@@ -133,7 +133,7 @@ export class ComponentDialog<O extends object = {}> extends Dialog<O> {
         const dialogState: any = outerDC.activeDialog.state[PERSISTED_DIALOG_STATE];
         const innerDC: DialogContext = new DialogContext(this.dialogs, outerDC.context, dialogState, outerDC.conversationState, outerDC.userState);
         if (this.inheritParentDialogs) { innerDC.parent = outerDC; }
-        const turnResult: DialogTurnResult<any> = await this.onContinueDialog(innerDC);
+        const turnResult: DialogTurnResult<any> = await this.onContinueDialog(innerDC, dialogState);
 
         // Check for end of inner dialog
         if (turnResult.status !== DialogTurnStatus.waiting) {
@@ -210,9 +210,10 @@ export class ComponentDialog<O extends object = {}> extends Dialog<O> {
      * default implementation simply calls [onRunTurn()](#onrunturn).
      * @param innerDC Dialog context for the components internal `DialogSet`.
      * @param options (Optional) options that were passed to the component by its parent.
+     * @param outerState The complete state object being persisted for the component.
      */
-    protected onBeginDialog(innerDC: DialogContext, options?: O): Promise<DialogTurnResult> {
-        return this.onRunTurn(innerDC, options);
+    protected onBeginDialog(innerDC: DialogContext, options: O|undefined, outerState: DialogState): Promise<DialogTurnResult> {
+        return this.onRunTurn(innerDC, options, outerState);
     }
 
     /**
@@ -222,9 +223,10 @@ export class ComponentDialog<O extends object = {}> extends Dialog<O> {
      * CAN be overridden by components that wish to perform custom continuation logic. The
      * default implementation simply calls [onRunTurn()](#onrunturn).
      * @param innerDC Dialog context for the components internal `DialogSet`.
+     * @param outerState The complete state object being persisted for the component.
      */
-    protected onContinueDialog(innerDC: DialogContext): Promise<DialogTurnResult> {
-        return this.onRunTurn(innerDC);
+    protected onContinueDialog(innerDC: DialogContext, outerState: DialogState): Promise<DialogTurnResult> {
+        return this.onRunTurn(innerDC, undefined, outerState);
     }
 
     /**
@@ -268,7 +270,7 @@ export class ComponentDialog<O extends object = {}> extends Dialog<O> {
      * @param innerDC Dialog context for the components internal `DialogSet`.
      * @param options (Optional) options that were passed to the component by its parent.
      */
-    protected async onRunTurn(innerDC: DialogContext, options?: O): Promise<DialogTurnResult> {
+    protected async onRunTurn(innerDC: DialogContext, options: O|undefined, outerState: DialogState): Promise<DialogTurnResult> {
         let result = await innerDC.continueDialog();
         if (result.status === DialogTurnStatus.empty) {
             result = await innerDC.beginDialog(this.initialDialogId, options);
