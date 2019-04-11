@@ -24,6 +24,7 @@ export class WhoAreYou extends AdaptiveDialog {
             ]),
             new IfCondition('user.name == null', [
                 new SendActivity(`Hello, I'm the cafe bot! What is your name?`),
+                new EndTurn()
             ])
             .else([
                 new SendActivity(`Hello {user.name}, nice to meet you! How can I be of help today?`)
@@ -46,6 +47,7 @@ export class WhoAreYou extends AdaptiveDialog {
 
         this.addRule(new IntentRule('#No_Name', [
             new SetProperty((state) => {state.user.name = 'Human'}),
+            new SendActivity(`Hello {user.name}, nice to meet you! How can I be of help today? You can always say 'my name is <your name> to reintroduce yourself to me.`),
             new EndDialog()
         ]));
 

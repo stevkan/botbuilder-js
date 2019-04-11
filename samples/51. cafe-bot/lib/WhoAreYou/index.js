@@ -20,6 +20,7 @@ class WhoAreYou extends botbuilder_dialogs_adaptive_1.AdaptiveDialog {
             ]),
             new botbuilder_dialogs_adaptive_1.IfCondition('user.name == null', [
                 new botbuilder_dialogs_adaptive_1.SendActivity(`Hello, I'm the cafe bot! What is your name?`),
+                new botbuilder_dialogs_adaptive_1.EndTurn()
             ])
                 .else([
                 new botbuilder_dialogs_adaptive_1.SendActivity(`Hello {user.name}, nice to meet you! How can I be of help today?`)
@@ -40,6 +41,7 @@ class WhoAreYou extends botbuilder_dialogs_adaptive_1.AdaptiveDialog {
         this.recognizer = this.luisRecognizer;
         this.addRule(new botbuilder_dialogs_adaptive_1.IntentRule('#No_Name', [
             new botbuilder_dialogs_adaptive_1.SetProperty((state) => { state.user.name = 'Human'; }),
+            new botbuilder_dialogs_adaptive_1.SendActivity(`Hello {user.name}, nice to meet you! How can I be of help today? You can always say 'my name is <your name> to reintroduce yourself to me.`),
             new botbuilder_dialogs_adaptive_1.EndDialog()
         ]));
         this.addRule(new botbuilder_dialogs_adaptive_1.IntentRule('#Why_do_you_ask', [
