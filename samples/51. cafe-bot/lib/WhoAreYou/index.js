@@ -34,10 +34,9 @@ class WhoAreYou extends botbuilder_dialogs_adaptive_1.AdaptiveDialog {
             applicationId: luisConfig.appId,
             endpoint: luisConfig.getEndpoint(),
             // CAUTION: Authoring key is used in this example as it is appropriate for prototyping.
-            // When implimenting for deployment/production, assign and use a subscription key instead of an authoring key.
+            // When implementing for deployment/production, assign and use a subscription key instead of an authoring key.
             endpointKey: luisConfig.authoringKey,
         });
-        // Add recognizer - utterance -> intent + entiteis
         this.recognizer = this.luisRecognizer;
         this.addRule(new botbuilder_dialogs_adaptive_1.IntentRule('#No_Name', [
             new botbuilder_dialogs_adaptive_1.SetProperty((state) => { state.user.name = 'Human'; }),
@@ -51,7 +50,6 @@ class WhoAreYou extends botbuilder_dialogs_adaptive_1.AdaptiveDialog {
             new botbuilder_dialogs_adaptive_1.SendActivity(`Hello {user.name}, nice to meet you! How can I be of help today?`),
             new botbuilder_dialogs_adaptive_1.EndDialog()
         ]));
-        //this.addRule(new IntentRule(`exists(#Get_User_Name) && (exists(@userName_patternAny) || exists(@userName))`))
         this.addRule(new botbuilder_dialogs_adaptive_1.IntentRule(['#Get_user_name', '@userName_patternAny'], [
             new botbuilder_dialogs_adaptive_1.SaveEntity('user.name', '@userName_patternAny'),
             new botbuilder_dialogs_adaptive_1.SendActivity(`Hello {user.name}, nice to meet you! How can I be of help today?`),
