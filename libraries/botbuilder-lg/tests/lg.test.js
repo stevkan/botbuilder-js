@@ -84,11 +84,11 @@ describe('LG', function () {
             }
         ];
 
-       //let evaled = engine.evaluate('ShowAlarmsWithForeach',{alarms:alarms});
-        //assert.strictEqual(evaled === "You have 2 alarms, 7 am at tomorrow and 8 pm at tomorrow", true, `Evaled is ${evaled}`);
-
-        let evaled = engine.evaluateTemplate('ShowAlarmsWithMemberHumanize',{alarms:alarms});
+        let evaled = engine.evaluateTemplate('ShowAlarmsWithForeach',{alarms:alarms});
         assert.strictEqual(evaled === "You have 2 alarms, 7 am at tomorrow and 8 pm at tomorrow", true, `Evaled is ${evaled}`);
+
+        // let evaled = engine.evaluateTemplate('ShowAlarmsWithMemberHumanize',{alarms:alarms});
+        // assert.strictEqual(evaled === "You have 2 alarms, 7 am at tomorrow and 8 pm at tomorrow", true, `Evaled is ${evaled}`);
     });
 
     
