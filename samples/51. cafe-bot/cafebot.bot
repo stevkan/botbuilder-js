@@ -1,0 +1,36 @@
+{
+    "name": "cafebot",
+    "description": "",
+    "services": [
+        {
+            "type": "endpoint",
+            "name": "development",
+            "endpoint": "http://localhost:3979/api/messages",
+            "appId": "",
+            "appPassword": "",
+            "id": "62"
+        },
+        {
+            "type": "luis",
+            "name": "rootDialog",
+            "appId": "f055b498-f436-4e0e-8faa-957618ae94ec",
+            "version": "0.1",
+            "authoringKey": "a95d07785b374f0a9d7d40700e28a285",
+            "subscriptionKey": "a95d07785b374f0a9d7d40700e28a285",
+            "region": "westus",
+            "id": "161"
+        },
+        {
+            "type": "luis",
+            "name": "WhoAreYou",
+            "appId": "dabb5f49-d641-4260-a5ef-81249c359339",
+            "version": "0.1",
+            "authoringKey": "a95d07785b374f0a9d7d40700e28a285",
+            "subscriptionKey": "a95d07785b374f0a9d7d40700e28a285",
+            "region": "westus",
+            "id": "239"
+        }
+    ],
+    "padlock": "",
+    "version": "2.0"
+}

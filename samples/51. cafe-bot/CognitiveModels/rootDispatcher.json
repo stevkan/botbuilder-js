@@ -1,0 +1,81 @@
+{
+  "intents": [
+    {
+      "name": "WhatCanYouDo"
+    },
+    {
+      "name": "WhoAreYou"
+    }
+  ],
+  "entities": [],
+  "composites": [],
+  "closedLists": [],
+  "regex_entities": [],
+  "model_features": [],
+  "regex_features": [],
+  "utterances": [
+    {
+      "text": "What can you do?",
+      "intent": "WhatCanYouDo",
+      "entities": []
+    },
+    {
+      "text": "What can I say?",
+      "intent": "WhatCanYouDo",
+      "entities": []
+    },
+    {
+      "text": "what can you help me with?",
+      "intent": "WhatCanYouDo",
+      "entities": []
+    },
+    {
+      "text": "what can you do for me?",
+      "intent": "WhatCanYouDo",
+      "entities": []
+    },
+    {
+      "text": "what do you do?",
+      "intent": "WhatCanYouDo",
+      "entities": []
+    },
+    {
+      "text": "Who are you?",
+      "intent": "WhoAreYou",
+      "entities": []
+    },
+    {
+      "text": "What is your name?",
+      "intent": "WhoAreYou",
+      "entities": []
+    },
+    {
+      "text": "how should I address you?",
+      "intent": "WhoAreYou",
+      "entities": []
+    },
+    {
+      "text": "What's your name?",
+      "intent": "WhoAreYou",
+      "entities": []
+    },
+    {
+      "text": "how can you help me?",
+      "intent": "WhoAreYou",
+      "entities": []
+    },
+    {
+      "text": "what can you do for me?",
+      "intent": "WhoAreYou",
+      "entities": []
+    }
+  ],
+  "patterns": [],
+  "patternAnyEntities": [],
+  "prebuiltEntities": [],
+  "luis_schema_version": "3.0.0",
+  "versionId": "0.1",
+  "name": "rootDialog",
+  "desc": "",
+  "culture": "en-us"
+}
