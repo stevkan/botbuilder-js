@@ -1,3 +1,11 @@
+
+/**
+ * @module botbuilder-expression
+ */
+/**
+ * Copyright (c) Microsoft Corporation. All rights reserved.
+ * Licensed under the MIT License.
+ */
 import { Expression, ReturnType } from './expression';
 import { ExpressionEvaluator } from './expressionEvaluator';
 import { ExpressionType } from './expressionType';
@@ -15,10 +23,10 @@ export class Constant extends Expression {
     }
 
     public set Value(theValue: any) {
-        this._evaluator.ReturnType =
+        this.Evaluator.ReturnType =
             typeof theValue === 'string' ? ReturnType.String
+                : typeof theValue === 'boolean' ? ReturnType.Boolean
                 : !Number.isNaN(theValue) ? ReturnType.Number
-                    : typeof theValue === 'boolean' ? ReturnType.Boolean
                         : ReturnType.Object;
 
         this._value = theValue;
@@ -35,10 +43,14 @@ export class Constant extends Expression {
     }
 
     public toString(): string {
+        if (this.Value === undefined) {
+            return 'null';
+        }
+
         if (typeof this.Value === 'string') {
             return `'${this.Value}'`;
-        } else {
-            return this.Value === undefined ? undefined : this.Value.toString();
         }
+
+        return this.Value === undefined ? undefined : this.Value.toString();
     }
 }

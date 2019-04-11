@@ -6,66 +6,114 @@
  * Licensed under the MIT License.
  */
 import { DialogCommand, DialogTurnResult, Dialog, DialogConfiguration } from 'botbuilder-dialogs';
+import { ExpressionEngine } from 'botbuilder-expression-parser';
+import { Expression } from 'botbuilder-expression';
 import { PlanningContext, PlanStepState, PlanChangeType } from '../planningContext';
+import { ExpressionDelegate } from './setProperty';
 
 export interface IfConditionConfiguration extends DialogConfiguration {
     /**
-     * The expression to evaluate.
+     * The conditional expression to evaluate.
      */
-    expression?: string;
+    condition?: string;
     
     /**
-     * The steps to run if [expression](#expression) returns true.
+     * The steps to run if [condition](#condition) returns true.
      */
     steps?: Dialog[];
+
+    /**
+     * The steps to run if [condition](#condition) returns false.
+     */
+    elseSteps?: Dialog[];
 }
 
 export class IfCondition extends DialogCommand {
+    /**
+     * The conditional expression to evaluate.
+     */
+    public condition: Expression;
 
     /**
-     * The expression to evaluate.
+     * The steps to run if [condition](#condition) returns true.
      */
-    public expression: string;
+    public steps: Dialog[] = [];
 
     /**
-     * The steps to run if [expression](#expression) returns true.
+     * The steps to run if [condition](#condition) returns false.
      */
-    public readonly steps: Dialog[] = [];
+    public elseSteps: Dialog[] = [];
 
     /**
      * Creates a new `IfCondition` instance.
-     * @param expression The expression to evaluate.
-     * @param steps The steps to run if the expression returns true. 
+     * @param condition The conditional expression to evaluate.
+     * @param steps The steps to run if the condition returns true. 
      */
-    constructor();
-    constructor(expression: string, steps: Dialog[]);
-    constructor(expression?: string, steps?: Dialog[]) {
+    constructor(condition?: string|Expression|ExpressionDelegate<boolean>, steps?: Dialog[]) {
         super();
-        if (expression) { this.expression = expression; }
-        if (Array.isArray(steps)) { Array.prototype.push.apply(this.steps, steps) }
+        if (condition) { 
+            switch (typeof condition) {
+                case 'string':
+                    this.condition = engine.parse(condition);
+                    break; 
+                case 'function':
+                    this.condition = Expression.Lambda(condition);
+                    break;
+                default:
+                    this.condition = condition as Expression;
+                    break;
+            }
+        }
+        if (Array.isArray(steps)) { this.steps = steps }
     }
 
     protected onComputeID(): string {
-        const stepList = this.steps.map((step) => step.id).join(',');
-        return `if[${this.hashedLabel(stepList)}]`;
+        const label = this.condition ? this.condition.toString() : '';
+        return `if[${this.hashedLabel(label)}]`;
     }
 
     public configure(config: IfConditionConfiguration): this {
-        return super.configure(config);
+        const cfg: IfConditionConfiguration = {};
+        for (const key in config) {
+            switch(key) {
+                case 'condition':
+                    this.condition = engine.parse(config.condition);
+                    break;
+                default:
+                    cfg[key] = config[key];
+                    break;
+            }
+        }
+        return super.configure(cfg);
     }
 
     public getDependencies(): Dialog[] {
-        return this.steps;
+        return this.steps.concat(this.elseSteps);
+    }
+
+    public else(steps: Dialog[]): this {
+        this.elseSteps = steps;
+        return this;
     }
 
     protected async onRunCommand(planning: PlanningContext, options: object): Promise<DialogTurnResult> {
-        // Ensure planning context
-        if (!(planning instanceof PlanningContext)) { throw new Error(`IfCondition: should only be used within a planning or sequence dialog.`) }
+        // Ensure planning context and condition
+        if (!(planning instanceof PlanningContext)) { throw new Error(`${this.id}: should only be used within a planning or sequence dialog.`) }
+        if (!this.condition) { throw new Error(`${this.id}: no conditional expression specified.`) }
 
-        // Look for first expression to return true.
-        if (this.isTruthy(planning, this.expression)) {
-            // Queue up steps that should run after current step
-            const steps = this.steps.map((step) => {
+        // Evaluate expression
+        const memory = planning.state.toJSON();
+        const { value, error } = this.condition.tryEvaluate(memory);
+
+        // Check for error
+        if (error) { throw new Error(`${this.id}: expression error - ${error.toString()}`) }
+
+        // Check for truthy returned value
+        const triggered = value ? this.steps : this.elseSteps;
+
+        // Queue up steps that should run after current step
+        if (triggered.length > 0) {
+            const steps = triggered.map((step) => {
                 return {
                     dialogStack: [],
                     dialogId: step.id,
@@ -73,37 +121,10 @@ export class IfCondition extends DialogCommand {
                 } as PlanStepState
             });
             await planning.queueChanges({ changeType: PlanChangeType.doSteps, steps: steps });
-        }
+        } 
 
         return await planning.endDialog();
     }
-
-    protected isTruthy(planning: PlanningContext, expression?: string): boolean {
-        if (expression) {
-            console.log(expression);
-            // Check for '!' prefix
-            let result = true;
-            if (expression[0] == '!') {
-                result = false;
-                expression = expression.substr(1);
-            }
-            const value = planning.state.getValue(expression);
-            if (Array.isArray(value)) {
-                return value.length > 0 ? result : !result;
-            } else if (typeof value == 'object') {
-                for (const key in value) {
-                    if (value.hasOwnProperty(key)) {
-                        return result;
-                    }
-                }
-
-                return !result;
-            } else {
-                console.log(`value: ${value}`)
-                return !!value ? result : !result;
-            }
-        } else {
-            return true;
-        }
-    }
 }
+
+const engine = new ExpressionEngine();

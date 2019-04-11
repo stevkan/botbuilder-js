@@ -4,6 +4,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const botbuilder_dialogs_adaptive_1 = require("botbuilder-dialogs-adaptive");
 const botbuilder_ai_1 = require("botbuilder-ai");
+const WhoAreYou_1 = require("../WhoAreYou");
 // this is the LUIS service type entry in the .bot file.
 const LUIS_CONFIGURATION = 'rootDialog';
 class CafeBot extends botbuilder_dialogs_adaptive_1.AdaptiveDialog {
@@ -24,13 +25,15 @@ class CafeBot extends botbuilder_dialogs_adaptive_1.AdaptiveDialog {
         });
         // Add recognizer
         this.recognizer = this.luisRecognizer;
-        // Define welcome rule
-        this.addRule(new botbuilder_dialogs_adaptive_1.WelcomeRule([
-            new botbuilder_dialogs_adaptive_1.SendActivity(`Hi! I'm a Cafe bot. Say "add a todo named first one" to get started.`)
-        ]));
         // Define rule for default response
-        this.addRule(new botbuilder_dialogs_adaptive_1.NoMatchRule([
+        this.addRule(new botbuilder_dialogs_adaptive_1.UnknownIntentRule([
             new botbuilder_dialogs_adaptive_1.SendActivity(`Sorry, I do not understand that.`)
+        ]));
+        this.addRule(new botbuilder_dialogs_adaptive_1.IntentRule('#WhatCanYouDo', [
+            new botbuilder_dialogs_adaptive_1.SendActivity(`I can help you book a table, find cafe locations and more`)
+        ]));
+        this.addRule(new botbuilder_dialogs_adaptive_1.IntentRule('#WhoAreYou', [
+            new WhoAreYou_1.WhoAreYou(botConfig)
         ]));
     }
 }

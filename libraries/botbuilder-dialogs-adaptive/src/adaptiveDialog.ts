@@ -6,7 +6,7 @@
  * Licensed under the MIT License.
  */
 import { 
-    TurnContext, BotTelemetryClient, NullTelemetryClient, Storage, ActivityTypes, 
+    TurnContext, BotTelemetryClient, NullTelemetryClient, ActivityTypes, 
     RecognizerResult
 } from 'botbuilder-core';
 import { 
@@ -16,7 +16,7 @@ import {
 import { 
     RuleDialogEventNames, PlanningContext, RuleDialogState as AdaptiveDialogState, PlanChangeList, PlanChangeType 
 } from './planningContext';
-import { PlanningRule, NoMatchRule } from './rules';
+import { PlanningRule } from './rules';
 import { Recognizer } from './recognizers';
 
 export interface AdaptiveDialogConfiguration extends DialogConfiguration {
@@ -236,6 +236,7 @@ export class AdaptiveDialog<O extends object = {}> extends Dialog<O> {
                                 dialogStack: []
                             });
                         });
+                        planning.queueChanges(changes);
                         handled = true;
                     } else {
                         // Dispatch activityReceived event
@@ -261,22 +262,22 @@ export class AdaptiveDialog<O extends object = {}> extends Dialog<O> {
                         const recognized = await this.onRecognize(planning.context);
     
                         // Dispatch utteranceRecognized event
-                        handled = await this.evaluateRules(planning, { name: RuleDialogEventNames.utteranceRecognized, value: recognized, bubble: false });
+                        handled = await this.evaluateRules(planning, { name: RuleDialogEventNames.recognizedIntent, value: recognized, bubble: false });
                     } else if (activity.type === ActivityTypes.Event) {
                         // Dispatch named event that was received
                         handled = await this.evaluateRules(planning, { name: activity.name, value: activity.value, bubble: false });
                     }
                 }
                 break;
-            case RuleDialogEventNames.utteranceRecognized:
+            case RuleDialogEventNames.recognizedIntent:
                 // Emit utteranceRecognized event
                 handled = await this.queueBestMatches(planning, event);
                 if (!handled) {
                     // Dispatch fallback event
-                    handled = await this.evaluateRules(planning, { name: RuleDialogEventNames.unhandledUtterance, value: event.value, bubble: false });
+                    handled = await this.evaluateRules(planning, { name: RuleDialogEventNames.unknownIntent, value: event.value, bubble: false });
                 }
                 break;
-            case RuleDialogEventNames.unhandledUtterance:
+            case RuleDialogEventNames.unknownIntent:
                 if (!planning.hasPlans) {
                     // Emit fallback event
                     handled = await this.queueFirstMatch(planning, event);

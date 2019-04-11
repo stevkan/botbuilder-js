@@ -1,11 +1,20 @@
 
+/**
+ * @module botbuilder-expression-lg
+ */
+/**
+ * Copyright (c) Microsoft Corporation. All rights reserved.
+ * Licensed under the MIT License.
+ */
+// tslint:disable-next-line: no-submodule-imports
 import { AbstractParseTreeVisitor, TerminalNode } from 'antlr4ts/tree';
 import { Expression } from 'botbuilder-expression';
 import { ExpressionEngine} from 'botbuilder-expression-parser';
+import { keyBy } from 'lodash';
 import * as lp from './generated/LGFileParser';
 import { LGFileParserVisitor } from './generated/LGFileParserVisitor';
 import { GetMethodExtensions, IGetMethod } from './getMethodExtensions';
-import { EvaluationContext } from './templateEngine';
+import { LGTemplate } from './lgTemplate';
 
 /**
  * Runtime template context store
@@ -24,19 +33,21 @@ export class EvaluationTarget {
  */
 // tslint:disable-next-line: max-classes-per-file
 export class Evaluator extends AbstractParseTreeVisitor<string> implements LGFileParserVisitor<string> {
-    public readonly Context: EvaluationContext;
+    public readonly Templates: LGTemplate[];
+    public readonly TemplateMap: {[name: string]: LGTemplate};
     private readonly evalutationTargetStack: EvaluationTarget[] = [];
 
     private readonly GetMethodX: IGetMethod;
 
-    constructor(context: EvaluationContext, getMethod: IGetMethod) {
+    constructor(templates: LGTemplate[], getMethod: IGetMethod) {
         super();
-        this.Context = context;
+        this.Templates = templates;
+        this.TemplateMap = keyBy(templates, (t: LGTemplate) => t.Name);
         this.GetMethodX = getMethod === undefined ? new GetMethodExtensions(this) : getMethod;
     }
 
     public EvaluateTemplate(templateName: string, scope: any): string {
-        if (!this.Context.TemplateContexts.has(templateName)) {
+        if (!(templateName in this.TemplateMap)) {
             throw new Error(`No such template: ${templateName}`);
         }
 
@@ -48,7 +59,7 @@ export class Evaluator extends AbstractParseTreeVisitor<string> implements LGFil
 
         // Using a stack to track the evalution trace
         this.evalutationTargetStack.push(new EvaluationTarget(templateName, scope));
-        const result: string = this.visit(this.Context.TemplateContexts.get(templateName));
+        const result: string = this.visit(this.TemplateMap[templateName].ParseTree);
         this.evalutationTargetStack.pop();
 
         return result;
@@ -69,6 +80,7 @@ export class Evaluator extends AbstractParseTreeVisitor<string> implements LGFil
 
     public visitNormalTemplateBody(ctx: lp.NormalTemplateBodyContext) : string {
         const normalTemplateStrs: lp.NormalTemplateStringContext[] = ctx.normalTemplateString();
+        // tslint:disable-next-line: insecure-random
         const randomNumber: number = Math.floor(Math.random() * normalTemplateStrs.length);
 
         return this.visit(normalTemplateStrs[randomNumber]);
@@ -77,7 +89,7 @@ export class Evaluator extends AbstractParseTreeVisitor<string> implements LGFil
     public visitConditionalBody(ctx: lp.ConditionalBodyContext) : string {
         const ifRules: lp.IfConditionRuleContext[] = ctx.conditionalTemplateBody().ifConditionRule();
         for (const ifRule of ifRules) {
-            if (this.EvalCondition(ifRule.ifCondition())) {
+            if (this.EvalCondition(ifRule.ifCondition()) && ifRule.normalTemplateBody() !== undefined) {
                 return this.visit(ifRule.normalTemplateBody());
             }
         }
@@ -117,13 +129,16 @@ export class Evaluator extends AbstractParseTreeVisitor<string> implements LGFil
     }
 
     public ConstructScope(templateName: string, args: any[]) : any {
-        if (args.length === 1 &&
-            !this.Context.TemplateParameters.has(templateName)) {
+        if (args.length === 1 && this.TemplateMap[templateName].Parameters.length === 0) {
             // Special case, if no parameters defined, and only one arg, don't wrap
-
+            // this is for directly calling an paramterized template
             return args[0];
         }
-        const paramters: string[] = this.ExtractParamters(templateName);
+        const paramters: string[] = this.TemplateMap[templateName].Parameters;
+
+        if (paramters !== undefined && (args === undefined || paramters.length !== args.length)) {
+            throw new Error(`The length of required parameters does not match the length of provided parameters.`);
+        }
 
         const newScope: any = {};
         paramters.map((e: string, i: number) => newScope[e] = args[i]);
@@ -156,9 +171,15 @@ export class Evaluator extends AbstractParseTreeVisitor<string> implements LGFil
     }
 
     private EvalCondition(condition: lp.IfConditionContext): boolean {
-        const expression: TerminalNode = condition.EXPRESSION(0);
-        if (expression === undefined ||                            // no expression means it's else
-            this.EvalExpressionInCondition(expression.text)) {
+        const expressions: TerminalNode[] = condition.EXPRESSION(); // Here ts is diff with C#, C# use condition.EXPRESSION(0) == null
+                                                                    // to judge ELSE condition. But in ts lib this action would throw
+                                                                    // Error
+
+        if (expressions === undefined || expressions.length === 0) {
+            return true;                                            // no expression means it's else
+        }
+
+        if (this.EvalExpressionInCondition(expressions[0].text)) {
             return true;
         }
 
@@ -239,15 +260,9 @@ export class Evaluator extends AbstractParseTreeVisitor<string> implements LGFil
         });
     }
 
-    private ExtractParamters(templateName: string): string[] {
-        const parameters: string[] = this.Context.TemplateParameters.get(templateName);
-
-        return parameters === undefined ? [] : parameters;
-    }
-
     private EvalByExpressionEngine(exp: string, scope: any) : {value: any; error: string} {
-        const parse: Expression = new ExpressionEngine(this.GetMethodX.GetMethodX).Parse(exp);
+        const parse: Expression = new ExpressionEngine(this.GetMethodX.GetMethodX).parse(exp);
 
-        return parse.TryEvaluate(scope);
+        return parse.tryEvaluate(scope);
     }
 }

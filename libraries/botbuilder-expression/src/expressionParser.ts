@@ -1,3 +1,11 @@
+
+/**
+ * @module botbuilder-expression
+ */
+/**
+ * Copyright (c) Microsoft Corporation. All rights reserved.
+ * Licensed under the MIT License.
+ */
 import { Expression } from './expression';
 
 /**
@@ -10,5 +18,5 @@ export interface IExpressionParser {
      * @param expression Expression to parse.
      * @returns The resulting expression.
      */
-    Parse(expression: string): Expression;
+    parse(expression: string): Expression;
 }

@@ -1,130 +1,114 @@
+/**
+ * @module botbuilder-expression-lg
+ */
+/**
+ * Copyright (c) Microsoft Corporation. All rights reserved.
+ * Licensed under the MIT License.
+ */
+// tslint:disable-next-line: no-submodule-imports
 import { ANTLRInputStream } from 'antlr4ts/ANTLRInputStream';
+// tslint:disable-next-line: no-submodule-imports
 import { CommonTokenStream } from 'antlr4ts/CommonTokenStream';
-import { TerminalNode } from 'antlr4ts/tree';
-import fs = require('fs');
+import * as fs from 'fs';
+import { flatten } from 'lodash';
 import { Analyzer } from './Analyzer';
 import { ErrorListener } from './errorListener';
 import { Evaluator } from './evaluator';
 import { LGFileLexer } from './generated/LGFileLexer';
 import { FileContext, LGFileParser, ParagraphContext, ParametersContext, TemplateDefinitionContext } from './generated/LGFileParser';
 import { IGetMethod } from './getMethodExtensions';
+import { LGTemplate } from './lgTemplate';
 import { ReportEntry, ReportEntryType, StaticChecker } from './staticChecker';
 
-/**
- * template context and parameters context
- */
-export class EvaluationContext {
-    public TemplateContexts: Map<string, TemplateDefinitionContext>;
-    public TemplateParameters: Map<string, string[]>;
-    // tslint:disable-next-line: max-line-length
-    public constructor(templateContexts: Map<string, TemplateDefinitionContext> = new Map<string, TemplateDefinitionContext>(),
-                       templateParameters: Map<string, string[]> = new Map<string, string[]>()) {
-        this.TemplateContexts = templateContexts;
-        this.TemplateParameters = templateParameters;
-    }
-}
-
-// tslint:disable-next-line: max-classes-per-file
 /**
  * LG parser and evaluation engine
  */
 export class TemplateEngine {
 
-    private readonly evaluationContext: EvaluationContext;
-    private constructor(context?: FileContext) {
-        if (context === undefined) {
-            this.evaluationContext = new EvaluationContext();
+    public templates: LGTemplate[];
 
-            return;
-        }
-
-        const templateContexts: Map<string, TemplateDefinitionContext> = new Map<string, TemplateDefinitionContext>();
-        const templateParameters: Map<string, string[]> = new Map<string, string[]>();
-        const templates: TemplateDefinitionContext[] = context.paragraph()
-        .map((p: ParagraphContext) => p.templateDefinition())
-        .filter((x: TemplateDefinitionContext) => x !== undefined);
-
-        for (const template of templates) {
-            const templateName: string = template.templateNameLine().templateName().text;
-            if (!templateContexts.has(templateName)) {
-                templateContexts.set(templateName, template);
-            } else {
-                // TODO: Understand why this reports duplicate items when there are actually no duplicates
-                // throw new Error(`Duplicate template definition with name: ${templateName}`);
-            }
-
-            // Extract parameter list
-            const parameters: ParametersContext = template.templateNameLine().parameters();
-            if (parameters !== undefined) {
-                templateParameters.set(templateName, parameters.IDENTIFIER().map((x: TerminalNode) => x.text));
-            }
-
-            this.evaluationContext = new EvaluationContext(templateContexts, templateParameters);
-            TemplateEngine.RunStaticCheck(this.evaluationContext);
-        }
+    public constructor() {
+        this.templates = [];
     }
 
-    public static EmptyEngine(): TemplateEngine {
-        return TemplateEngine.FromText('');
+    public static fromFiles(...filePaths: string[]): TemplateEngine {
+        return new TemplateEngine().addFiles(...filePaths);
     }
 
-    public static FromFile(filePath: string): TemplateEngine {
-        return TemplateEngine.FromText(fs.readFileSync(filePath, 'utf-8'));
+    public static fromText(lgFileContent: string): TemplateEngine {
+       return new TemplateEngine().addText(lgFileContent);
     }
 
-    public static FromText(lgFileContent: string): TemplateEngine {
-        if (lgFileContent === undefined
-            || lgFileContent === ''
-            || lgFileContent === null) {
-            return new TemplateEngine();
-        }
+    public addFiles = (...filePaths: string[]) : TemplateEngine => {
+        const newTemplates: LGTemplate[] = flatten(filePaths.map((filePath: string) => {
+            // tslint:disable-next-line: non-literal-fs-path
+            const text: string = fs.readFileSync(filePath, 'utf-8');
 
-        const input: ANTLRInputStream = new ANTLRInputStream(lgFileContent);
-        const lexer: LGFileLexer = new LGFileLexer(input);
-        const tokens: CommonTokenStream = new CommonTokenStream(lexer);
-        const parser: LGFileParser = new LGFileParser(tokens);
-        parser.removeErrorListeners();
-        parser.addErrorListener(new ErrorListener());
-        parser.buildParseTree = true;
+            return this.toTemplates(this.parse(text), filePath);
+        }));
 
-        const context: FileContext = parser.file();
+        const mergedTemplates: LGTemplate[] = this.templates.concat(newTemplates);
 
-        return new TemplateEngine(context);
+        this.runStaticCheck(mergedTemplates);
+
+        this.templates = mergedTemplates;
+
+        return this;
     }
 
-    public static RunStaticCheck(evaluationContext: EvaluationContext): void {
-        const checker: StaticChecker = new StaticChecker(evaluationContext);
-        const reportMessages: ReportEntry[] = checker.Check();
+    public addText = (text: string): TemplateEngine => {
+        const newTemplates: LGTemplate[] = this.toTemplates(this.parse(text), 'text');
+        const mergedTemplates: LGTemplate[] = this.templates.concat(newTemplates);
 
-        const errorMessages: ReportEntry[] = reportMessages.filter((message: ReportEntry) => message.Type === ReportEntryType.ERROR);
-        if (errorMessages.length > 0) {
-            throw Error(errorMessages.join('\n'));
-        }
+        this.runStaticCheck(mergedTemplates);
+
+        this.templates = mergedTemplates;
+
+        return this;
     }
 
-    public EvaluateTemplate(templateName: string, scope: any, methodBinder?: IGetMethod) : string {
-        const evalutor: Evaluator = new Evaluator(this.evaluationContext, methodBinder);
+    public evaluateTemplate(templateName: string, scope: any, methodBinder?: IGetMethod) : string {
+        const evalutor: Evaluator = new Evaluator(this.templates, methodBinder);
 
         return evalutor.EvaluateTemplate(templateName, scope);
     }
 
-    public AnalyzeTemplate(templateName: string): string[] {
-        const analyzer: Analyzer = new Analyzer(this.evaluationContext);
+    public analyzeTemplate(templateName: string): string[] {
+        const analyzer: Analyzer = new Analyzer(this.templates);
 
         return analyzer.AnalyzeTemplate(templateName);
     }
 
-    public Evaluate(inlinsStr: string, scope: any, methodBinder?: IGetMethod): string {
-
-        // TODO: maybe we can directly ref the templateBody without giving a name, but that means
-        // we needs to make a little changes in the evalutor, especially the loop detection part
-        const fakeTemplateId: string = '__temp__';
-
+    public evaluate(inlinsStr: string, scope: any, methodBinder?: IGetMethod): string {
         // wrap inline string with "# name and -" to align the evaluation process
+        const fakeTemplateId: string = '__temp__';
         const wrappedStr: string = `# ${fakeTemplateId} \r\n - ${inlinsStr}`;
 
-        // Step 1: parse input, construct parse tree
-        const input: ANTLRInputStream = new ANTLRInputStream(wrappedStr);
+        const newTemplates: LGTemplate[] = this.toTemplates(this.parse(wrappedStr), 'inline');
+        const mergedTemplates: LGTemplate[] = this.templates.concat(newTemplates);
+
+        this.runStaticCheck(mergedTemplates);
+
+        const evalutor: Evaluator = new Evaluator(mergedTemplates, methodBinder);
+
+        return evalutor.EvaluateTemplate(fakeTemplateId, scope);
+    }
+
+    /*
+    public AddFiles = (...filePaths: string[]): TemplateEngine => {
+
+    }
+    */
+
+    // Parse text as a LG file using antlr
+    private readonly parse = (text: string): FileContext => {
+        if (text === undefined
+            || text === ''
+            || text === null) {
+            return undefined;
+        }
+
+        const input: ANTLRInputStream = new ANTLRInputStream(text);
         const lexer: LGFileLexer = new LGFileLexer(input);
         const tokens: CommonTokenStream = new CommonTokenStream(lexer);
         const parser: LGFileParser = new LGFileParser(tokens);
@@ -132,16 +116,29 @@ export class TemplateEngine {
         parser.addErrorListener(new ErrorListener());
         parser.buildParseTree = true;
 
-        // the only difference here is that we parse as templateBody, not as the whole file
-        const context: TemplateDefinitionContext = parser.templateDefinition();
+        return parser.file();
+    }
 
-        // Step 2: constuct a new evalution context on top of the current one
-        const evaluationContext: EvaluationContext = new EvaluationContext(this.evaluationContext.TemplateContexts,
-                                                                           this.evaluationContext.TemplateParameters);
-        evaluationContext.TemplateContexts.set(fakeTemplateId, context);
-        const evalutor: Evaluator = new Evaluator(evaluationContext, methodBinder);
+    private readonly toTemplates = (file: FileContext, source: string): LGTemplate[] => {
+        if (file === undefined
+            || file === null) {
+            return [];
+        }
 
-        // Step 3: evaluate
-        return evalutor.EvaluateTemplate(fakeTemplateId, scope);
+        const templates: TemplateDefinitionContext[] = file.paragraph()
+                                                          .map((x: ParagraphContext) => x.templateDefinition())
+                                                          .filter((x: TemplateDefinitionContext) => x !== undefined);
+
+        return templates.map((x: TemplateDefinitionContext) => new LGTemplate(x, source));
+    }
+
+    private readonly runStaticCheck = (templates: LGTemplate[]): void => {
+        const checker: StaticChecker = new StaticChecker(templates);
+        const reportMessages: ReportEntry[] = checker.Check();
+
+        const errorMessages: ReportEntry[] = reportMessages.filter((message: ReportEntry) => message.Type === ReportEntryType.ERROR);
+        if (errorMessages.length > 0) {
+            throw Error(reportMessages.map((error: ReportEntry) => error.toString()).join('\n'));
+        }
     }
 }

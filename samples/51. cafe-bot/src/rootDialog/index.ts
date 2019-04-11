@@ -1,11 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { AdaptiveDialog, WelcomeRule, SendActivity, IntentRule, PlanChangeType, EventRule, NoMatchRule } from "botbuilder-dialogs-adaptive";
+import { AdaptiveDialog, SendActivity, IntentRule, PlanChangeType, EventRule, UnknownIntentRule } from "botbuilder-dialogs-adaptive";
 import { BotConfiguration, LuisService} from 'botframework-config';
 import { LuisRecognizer, LuisApplication } from 'botbuilder-ai';
 import { TemplateEngine } from 'botbuilder-lg';
-
+import { WhoAreYou } from '../WhoAreYou';
 // this is the LUIS service type entry in the .bot file.
 const LUIS_CONFIGURATION = 'rootDialog';
 export class CafeBot extends AdaptiveDialog {
@@ -31,14 +31,17 @@ export class CafeBot extends AdaptiveDialog {
         // Add recognizer
         this.recognizer = this.luisRecognizer;
 
-        // Define welcome rule
-        this.addRule(new WelcomeRule([
-            new SendActivity(`Hi! I'm a Cafe bot. Say "add a todo named first one" to get started.`)
-        ]));
-
         // Define rule for default response
-        this.addRule(new NoMatchRule([
+        this.addRule(new UnknownIntentRule([
             new SendActivity(`Sorry, I do not understand that.`)
         ]));
+
+        this.addRule(new IntentRule('#WhatCanYouDo', [
+            new SendActivity(`I can help you book a table, find cafe locations and more`)
+        ]));
+
+        this.addRule(new IntentRule('#WhoAreYou', [
+            new WhoAreYou(botConfig)
+        ]))
     }
 }

@@ -1,29 +1,41 @@
+
+/**
+ * @module botbuilder-expression-lg
+ */
+/**
+ * Copyright (c) Microsoft Corporation. All rights reserved.
+ * Licensed under the MIT License.
+ */
+// tslint:disable-next-line: no-submodule-imports
 import { AbstractParseTreeVisitor, ParseTree, TerminalNode } from 'antlr4ts/tree';
 import { Constant, Expression, Extensions, IExpressionParser } from 'botbuilder-expression';
 import { ExpressionEngine} from 'botbuilder-expression-parser';
+import { flatten, keyBy } from 'lodash';
 import { EvaluationTarget } from './evaluator';
 import * as lp from './generated/LGFileParser';
 import { LGFileParserVisitor } from './generated/LGFileParserVisitor';
 import { GetMethodExtensions } from './getMethodExtensions';
-import { EvaluationContext } from './templateEngine';
+import { LGTemplate } from './lgTemplate';
 
 // tslint:disable-next-line: max-classes-per-file
 /**
  * Analyzer engine. To analyse which variable may be used
  */
 export class Analyzer extends AbstractParseTreeVisitor<string[]> implements LGFileParserVisitor<string[]> {
-    public readonly Context: EvaluationContext;
+    public readonly Templates: LGTemplate[];
+    public readonly TemplateMap: {[name: string]: LGTemplate};
     private readonly evalutationTargetStack: EvaluationTarget[] = [];
     private readonly _expressionParser: IExpressionParser;
 
-    constructor(context: EvaluationContext) {
+    constructor(templates: LGTemplate[]) {
         super();
-        this.Context = context;
+        this.Templates = templates;
+        this.TemplateMap = keyBy(templates, (t: LGTemplate) => t.Name);
         this._expressionParser = new ExpressionEngine(new GetMethodExtensions(undefined).GetMethodX);
     }
 
     public AnalyzeTemplate(templateName: string): string[] {
-        if (!this.Context.TemplateContexts.has(templateName)) {
+        if (!(templateName in this.TemplateMap)) {
             throw new Error(`No such template: ${templateName}`);
         }
 
@@ -33,12 +45,15 @@ export class Analyzer extends AbstractParseTreeVisitor<string[]> implements LGFi
                 .join(' => ')}`);
         }
 
+        // Using a stack to track the evalution trace
         this.evalutationTargetStack.push(new EvaluationTarget(templateName, undefined));
-        const rawDependencies: string[] = this.visit(this.Context.TemplateContexts.get(templateName));
-        const parameters: string[] = this.ExtractParamters(templateName);
+        const rawDependencies: string[] = this.visit(this.TemplateMap[templateName].ParseTree);
 
-        // we need to exclude parameters from raw dependencies
-        const dependencies: string[] = Array.from(new Set(rawDependencies.filter((element: string) => !parameters.includes(element))));
+        // we don't exclude paratemters any more
+        // because given we don't track down for templates have paramters
+        // the only scenario that we are still analyzing an paramterized template is
+        // this template is root template to anaylze, in this we also don't have exclude paramters
+        const dependencies: string[] = Array.from(new Set(rawDependencies));
         this.evalutationTargetStack.pop();
 
         return dependencies;
@@ -73,13 +88,13 @@ export class Analyzer extends AbstractParseTreeVisitor<string[]> implements LGFi
 
         const ifRules: lp.IfConditionRuleContext[] = ctx.conditionalTemplateBody().ifConditionRule();
         for (const ifRule of ifRules) {
-
-            const expression: TerminalNode = ifRule.ifCondition().EXPRESSION(0);
-            if (expression !== undefined) {
-                result = result.concat(this.AnalyzeExpression(expression.text));
+            const expressions: TerminalNode[] = ifRule.ifCondition().EXPRESSION();
+            if (expressions !== undefined && expressions.length > 0) {
+                result = result.concat(this.AnalyzeExpression(expressions[0].text));
             }
-
-            result = result.concat(this.visit(ifRule.normalTemplateBody()));
+            if (ifRule.normalTemplateBody() !== undefined) {
+                result = result.concat(this.visit(ifRule.normalTemplateBody()));
+            }
         }
 
         return result;
@@ -119,7 +134,7 @@ export class Analyzer extends AbstractParseTreeVisitor<string[]> implements LGFi
     private AnalyzeExpression(exp: string): string[] {
         exp = exp.replace(/(^{*)/g, '')
                 .replace(/(}*$)/g, '');
-        const parse: Expression = this._expressionParser.Parse(exp);
+        const parse: Expression = this._expressionParser.parse(exp);
         const references: Set<string> = new Set<string>();
 
         const path: string = Extensions.ReferenceWalk(parse, references, (expression: Expression) => {
@@ -128,21 +143,15 @@ export class Analyzer extends AbstractParseTreeVisitor<string[]> implements LGFi
                 const str: string = (expression).Value;
                 if (str.startsWith('[') && str.endsWith(']')) {
                     found = true;
-                    let end: number = str.indexOf('(');
-                    if (end === -1) {
-                        end = str.length - 1;
-                    }
-
-                    const template: string = str.substr(1, end - 1);
-                    const analyzer: Analyzer = new Analyzer(this.Context);
-                    for (const reference of analyzer.AnalyzeTemplate(template)) {
-                        references.add(reference);
-                    }
+                    this.AnalyzeTemplateRef(str).forEach((x: string) => references.add(x));
                 } else if (str.startsWith('{') && str.endsWith('}')) {
                     found = true;
                     for (const childRef of this.AnalyzeExpression(str)) {
                         references.add(childRef);
                     }
+                } else if (str in this.TemplateMap) {
+                    found = true;
+                    this.AnalyzeTemplateRef(str).forEach((x: string) => references.add(x));
                 }
             }
 
@@ -162,17 +171,27 @@ export class Analyzer extends AbstractParseTreeVisitor<string[]> implements LGFi
         const argsStartPos: number = exp.indexOf('(');
         if (argsStartPos > 0) { // Do have args
 
-            // EvaluateTemplate all arguments using ExpressoinEngine
+            // evaluate all arguments using ExpressoinEngine
             const argsEndPos: number = exp.lastIndexOf(')');
+
             if (argsEndPos < 0 || argsEndPos < argsStartPos + 1) {
                 throw Error(`Not a valid template ref: ${exp}`);
             }
 
-            const templateName: string = exp.substr(0, argsStartPos);
+            const args: string[] = exp.substr(argsStartPos + 1, argsEndPos - argsStartPos - 1).split(',');
 
-            return this.AnalyzeTemplate(templateName);
+            // Before we have a matural solution to analyze paramterized template, we stop digging into
+            // templates with paramters, we just analyze it's args.
+            // With this approach we may not get a very fine-grained result
+            // but the result will still be accurate
+            return flatten(args.map((arg: string) => this.AnalyzeExpression(arg)));
         } else {
-            return this.AnalyzeTemplate(exp);
+            // We analyze tempalte only if the template has no formal parameters
+            if (this.TemplateMap[exp].Parameters === undefined || this.TemplateMap[exp].Parameters.length === 0) {
+                return this.AnalyzeTemplate(exp);
+            } else {
+                return [];
+            }
         }
     }
 
@@ -194,11 +213,5 @@ export class Analyzer extends AbstractParseTreeVisitor<string[]> implements LGFi
 
     private currentTarget(): EvaluationTarget {
         return this.evalutationTargetStack[this.evalutationTargetStack.length - 1];
-    }
-
-    private ExtractParamters(templateName: string): string[] {
-        const parameters: string[] = this.Context.TemplateParameters.get(templateName);
-
-        return parameters === undefined ? [] : parameters;
     }
 }
