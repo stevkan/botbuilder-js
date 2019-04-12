@@ -8,16 +8,7 @@ const botbuilder_ai_1 = require("botbuilder-ai");
 const LUIS_CONFIGURATION = 'WhoAreYou';
 class WhoAreYou extends botbuilder_dialogs_adaptive_1.AdaptiveDialog {
     constructor(botConfig) {
-        super('WhoAreYou', [
-            new botbuilder_dialogs_adaptive_1.SaveEntity('user.name', '@userName'),
-            new botbuilder_dialogs_adaptive_1.SaveEntity('user.name', '@userName_patternAny'),
-            new botbuilder_dialogs_adaptive_1.IfCondition('exksts(user.name)', [
-                new botbuilder_dialogs_adaptive_1.SendActivity(`Hello, I'm the cafe bot! What is your name?`),
-            ])
-                .else([
-                new botbuilder_dialogs_adaptive_1.EmitEvent('DONE')
-            ])
-        ]);
+        super('WhoAreYou');
         this.autoEnd = false;
         let luisConfig;
         luisConfig = botConfig.findServiceByNameOrId(LUIS_CONFIGURATION);
@@ -30,6 +21,19 @@ class WhoAreYou extends botbuilder_dialogs_adaptive_1.AdaptiveDialog {
             endpointKey: luisConfig.authoringKey,
         });
         this.recognizer = this.luisRecognizer;
+        this.addRule(new botbuilder_dialogs_adaptive_1.EventRule(botbuilder_dialogs_adaptive_1.RuleDialogEventNames.beginDialog, [
+            new botbuilder_dialogs_adaptive_1.SaveEntity('user.name', '@userName'),
+            new botbuilder_dialogs_adaptive_1.SaveEntity('user.name', '@userName_patternAny'),
+            new botbuilder_dialogs_adaptive_1.IfCondition('user.name != null', [
+                new botbuilder_dialogs_adaptive_1.SendActivity(`Hello, I'm the cafe bot! What is your name?`),
+            ])
+                .else([
+                new botbuilder_dialogs_adaptive_1.EmitEvent('DONE')
+            ])
+        ]));
+        this.addRule(new botbuilder_dialogs_adaptive_1.EventRule(botbuilder_dialogs_adaptive_1.RuleDialogEventNames.recognizedIntent, [
+            new botbuilder_dialogs_adaptive_1.IfCondition(`#No_Name`, [])
+        ]));
         this.addRule(new botbuilder_dialogs_adaptive_1.IntentRule('#No_Name', [
             new botbuilder_dialogs_adaptive_1.SetProperty((state) => { state.user.name = 'Human'; }),
             new botbuilder_dialogs_adaptive_1.EmitEvent('NO_NAME')

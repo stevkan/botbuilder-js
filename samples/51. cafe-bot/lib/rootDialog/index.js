@@ -19,21 +19,19 @@ class CafeBot extends botbuilder_dialogs_adaptive_1.AdaptiveDialog {
         this.luisRecognizer = new botbuilder_ai_1.LuisRecognizer({
             applicationId: luisConfig.appId,
             endpoint: luisConfig.getEndpoint(),
-            // CAUTION: Authoring key is used in this example as it is appropriate for prototyping.
-            // When implimenting for deployment/production, assign and use a subscription key instead of an authoring key.
             endpointKey: luisConfig.authoringKey,
         });
         // Add recognizer
         this.recognizer = this.luisRecognizer;
-        // Define rule for default response
-        this.addRule(new botbuilder_dialogs_adaptive_1.UnknownIntentRule([
-            new botbuilder_dialogs_adaptive_1.SendActivity(`Sorry, I do not understand that.`)
-        ]));
         this.addRule(new botbuilder_dialogs_adaptive_1.IntentRule('#WhatCanYouDo', [
             new botbuilder_dialogs_adaptive_1.SendActivity(`I can help you book a table, find cafe locations and more`)
         ]));
         this.addRule(new botbuilder_dialogs_adaptive_1.IntentRule('#WhoAreYou', [
             new WhoAreYou_1.WhoAreYou(botConfig)
+        ]));
+        // Define rule for default response
+        this.addRule(new botbuilder_dialogs_adaptive_1.UnknownIntentRule([
+            new botbuilder_dialogs_adaptive_1.SendActivity(`Sorry, I do not understand that.`)
         ]));
     }
 }

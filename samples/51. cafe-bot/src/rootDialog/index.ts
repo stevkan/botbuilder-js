@@ -23,18 +23,11 @@ export class CafeBot extends AdaptiveDialog {
         this.luisRecognizer = new LuisRecognizer({
             applicationId: luisConfig.appId,
             endpoint: luisConfig.getEndpoint(),
-            // CAUTION: Authoring key is used in this example as it is appropriate for prototyping.
-            // When implimenting for deployment/production, assign and use a subscription key instead of an authoring key.
             endpointKey: luisConfig.authoringKey,
         });
 
         // Add recognizer
         this.recognizer = this.luisRecognizer;
-
-        // Define rule for default response
-        this.addRule(new UnknownIntentRule([
-            new SendActivity(`Sorry, I do not understand that.`)
-        ]));
 
         this.addRule(new IntentRule('#WhatCanYouDo', [
             new SendActivity(`I can help you book a table, find cafe locations and more`)
@@ -42,6 +35,11 @@ export class CafeBot extends AdaptiveDialog {
 
         this.addRule(new IntentRule('#WhoAreYou', [
             new WhoAreYou(botConfig)
-        ]))
+        ]));
+
+        // Define rule for default response
+        this.addRule(new UnknownIntentRule([
+            new SendActivity(`Sorry, I do not understand that.`)
+        ]));
     }
 }
