@@ -69,7 +69,7 @@ export class AdaptiveDialog<O extends object = {}> extends Dialog<O> {
      * (Optional) flag that determines whether the dialog automatically ends when the plan is out
      * of steps. Defaults to `false` for the root dialog and `true` for child dialogs.
      */
-    public autoEnd?: boolean;
+    public autoEndDialog?: boolean;
 
     public set telemetryClient(client: BotTelemetryClient) {
         super.telemetryClient = client ? client : new NullTelemetryClient();
@@ -318,9 +318,29 @@ export class AdaptiveDialog<O extends object = {}> extends Dialog<O> {
             }
 
             return recognized;
+        } else if (this.recognizer) {
+            // Call recognizer as normal and filter to top intent
+            let topIntent: string;
+            let topScore = -1;
+            const recognized = await this.recognizer.recognize(context);
+            for (const key in recognized.intents) {
+                if (recognized.intents.hasOwnProperty(key)) {
+                    if (topIntent == undefined) {
+                        topIntent = key;
+                        topScore = recognized.intents[key].score;
+                    } else if (recognized.intents[key].score > topScore) {
+                        delete recognized.intents[topIntent];
+                        topIntent = key;
+                        topScore = recognized.intents[key].score;
+                    } else {
+                        delete recognized.intents[key];
+                    }
+                }
+            }
+
+            return recognized;
         } else {
-            // Call recognizer as normal
-            return this.recognizer ? await this.recognizer.recognize(context) : noneIntent;
+            return noneIntent;
         }
     }
 
@@ -578,10 +598,10 @@ export class AdaptiveDialog<O extends object = {}> extends Dialog<O> {
     }
 
     private shouldEnd(dc: DialogContext): boolean {
-        if (this.autoEnd == undefined) {
+        if (this.autoEndDialog == undefined) {
             return (dc.parent != null);
         } else {
-            return this.autoEnd;
+            return this.autoEndDialog;
         }
     }
 }
