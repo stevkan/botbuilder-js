@@ -16,11 +16,12 @@ export interface TextInputConfiguration extends DialogConfiguration, TextSlotCon
 
 export class TextInput extends DialogCommand implements DialogDependencies {
     private prompt = new TextPrompt();
-
-    constructor(property: string, activity: string|Partial<Activity>) {
+    private entityName:string;
+    constructor(property: string, entityName: string, activity: string|Partial<Activity>) {
         super();
         this.property = property;
         this.activity.value = activity;
+        this.entityName = entityName;
     }
 
     protected onComputeID(): string {
@@ -60,6 +61,14 @@ export class TextInput extends DialogCommand implements DialogDependencies {
     }
 
     public async onRunCommand(dc: DialogContext): Promise<DialogTurnResult> {
+        // Get entity
+        const values: any|any[] = dc.state.getValue(this.entityName);
+        if (Array.isArray(values) && values.length > 0) {
+            // Save first value to property
+            dc.state.setValue(this.property, values[0]);
+        } else if (values !== undefined) {
+            dc.state.setValue(this.property, values);
+        }
         // Check value and only call if missing
         const value = dc.state.getValue(this.property);
         if (typeof value !== 'string' || value.length == 0) {

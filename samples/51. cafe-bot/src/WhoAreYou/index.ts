@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-import { RuleDialogEventNames, AdaptiveDialog, SendActivity, SaveEntity, IntentRule, EventRule, UnknownIntentRule, IfCondition, TextInput, EndDialog, SetProperty, EmitEvent, CodeStep } from "botbuilder-dialogs-adaptive";
+import { RuleDialogEventNames, AdaptiveDialog, SendActivity, SaveEntity, IntentRule, EventRule, UnknownIntentRule, IfCondition, TextInput, EndDialog, SetProperty, EmitEvent, CodeStep, LogStep } from "botbuilder-dialogs-adaptive";
 import { BotConfiguration, LuisService} from 'botframework-config';
 import { LuisRecognizer } from 'botbuilder-ai';
 
@@ -13,7 +13,7 @@ export class WhoAreYou extends AdaptiveDialog {
     constructor(botConfig: BotConfiguration) {
         super('WhoAreYou');
 
-        this.autoEnd = false;
+        this.autoEndDialog = false;
 
         let luisConfig: LuisService;
         luisConfig = botConfig.findServiceByNameOrId(LUIS_CONFIGURATION) as LuisService;
@@ -29,22 +29,16 @@ export class WhoAreYou extends AdaptiveDialog {
         this.addRule(new EventRule(RuleDialogEventNames.beginDialog, [
             new SaveEntity('user.name', '@userName'),
             new SaveEntity('user.name', '@userName_patternAny'),
-            new IfCondition('user.name != null', [
-                new SendActivity(`Hello, I'm the cafe bot! What is your name?`),
+            new IfCondition('user.name == null', [
+                new SendActivity(`Hello, I'm the cafe bot! What is your name?`)
             ])
             .else([
                 new EmitEvent('DONE')
             ])
         ]))
-        
-        this.addRule(new EventRule(RuleDialogEventNames.recognizedIntent, [
-            new IfCondition(`#No_Name`, [
-
-            ])
-        ]))
 
         this.addRule(new IntentRule('#No_Name', [
-            new SetProperty((state) => {state.user.name = 'Human'}),
+            new SetProperty('user.name', `Human`),
             new EmitEvent('NO_NAME')
         ]));
 

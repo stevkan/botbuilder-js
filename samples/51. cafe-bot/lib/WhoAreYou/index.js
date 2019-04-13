@@ -9,7 +9,7 @@ const LUIS_CONFIGURATION = 'WhoAreYou';
 class WhoAreYou extends botbuilder_dialogs_adaptive_1.AdaptiveDialog {
     constructor(botConfig) {
         super('WhoAreYou');
-        this.autoEnd = false;
+        this.autoEndDialog = false;
         let luisConfig;
         luisConfig = botConfig.findServiceByNameOrId(LUIS_CONFIGURATION);
         if (!luisConfig || !luisConfig.appId) {
@@ -24,18 +24,15 @@ class WhoAreYou extends botbuilder_dialogs_adaptive_1.AdaptiveDialog {
         this.addRule(new botbuilder_dialogs_adaptive_1.EventRule(botbuilder_dialogs_adaptive_1.RuleDialogEventNames.beginDialog, [
             new botbuilder_dialogs_adaptive_1.SaveEntity('user.name', '@userName'),
             new botbuilder_dialogs_adaptive_1.SaveEntity('user.name', '@userName_patternAny'),
-            new botbuilder_dialogs_adaptive_1.IfCondition('user.name != null', [
-                new botbuilder_dialogs_adaptive_1.SendActivity(`Hello, I'm the cafe bot! What is your name?`),
+            new botbuilder_dialogs_adaptive_1.IfCondition('user.name == null', [
+                new botbuilder_dialogs_adaptive_1.SendActivity(`Hello, I'm the cafe bot! What is your name?`)
             ])
                 .else([
                 new botbuilder_dialogs_adaptive_1.EmitEvent('DONE')
             ])
         ]));
-        this.addRule(new botbuilder_dialogs_adaptive_1.EventRule(botbuilder_dialogs_adaptive_1.RuleDialogEventNames.recognizedIntent, [
-            new botbuilder_dialogs_adaptive_1.IfCondition(`#No_Name`, [])
-        ]));
         this.addRule(new botbuilder_dialogs_adaptive_1.IntentRule('#No_Name', [
-            new botbuilder_dialogs_adaptive_1.SetProperty((state) => { state.user.name = 'Human'; }),
+            new botbuilder_dialogs_adaptive_1.SetProperty('user.name', `Human`),
             new botbuilder_dialogs_adaptive_1.EmitEvent('NO_NAME')
         ]));
         this.addRule(new botbuilder_dialogs_adaptive_1.IntentRule('#Why_do_you_ask', [
