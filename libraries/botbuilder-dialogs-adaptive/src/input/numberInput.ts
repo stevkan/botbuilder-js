@@ -15,7 +15,7 @@ export class NumberInput extends DialogCommand implements DialogDependencies {
     constructor(property?: string, activity?: string|Partial<Activity>) {
         super();
         this.property = property;
-        this.activityProperty.value = activity;
+        this.activity.value = activity;
     }
 
     protected onComputeID(): string {
@@ -36,14 +36,14 @@ export class NumberInput extends DialogCommand implements DialogDependencies {
      * Activity to send the user.
      */
     public set prompt(value: string|Partial<Activity>) {
-        this.activityProperty.value = value;
+        this.activity.value = value;
     }
 
     public get prompt(): string|Partial<Activity> {
-        return this.activityProperty.value;
+        return this.activity.value;
     }
 
-    private activityProperty = new ActivityProperty();
+    private activity = new ActivityProperty();
 
     /**
      * (Optional) data binds the called dialogs input & output to the given property.
@@ -66,7 +66,7 @@ export class NumberInput extends DialogCommand implements DialogDependencies {
         // Check value and only call if missing
         const value = dc.state.getValue(this.property);
         if (typeof value !== 'number') {
-            const activity = this.activityProperty.format(dc, { utterance: dc.context.activity.text || '' });
+            const activity = this.activity.format(dc, { utterance: dc.context.activity.text || '' });
             return await dc.prompt(this.numberPrompt.id, activity);
         } else {
             return await dc.endDialog();
