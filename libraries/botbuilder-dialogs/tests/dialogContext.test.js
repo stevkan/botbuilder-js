@@ -6,10 +6,10 @@ const beginMessage = { text: `begin`, type: 'message' };
 const continueMessage = { text: `continue`, type: 'message' };
 
 class BindingTestDialog extends Dialog {
-    constructor(dialogId, inputBinding, outputBinding) {
+    constructor(dialogId, inputProperties, outputProperty) {
         super(dialogId);
-        this.inputBindings['value'] = inputBinding;
-        this.outputBinding = outputBinding; 
+        this.inputProperties['value'] = inputProperties;
+        this.outputProperty = outputProperty; 
     }
 
     async beginDialog(dc, options) {

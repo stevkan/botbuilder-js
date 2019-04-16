@@ -10,12 +10,12 @@ import { ActivityProperty } from '../activityProperty';
 import { Activity } from 'botbuilder-core';
 
 export class NumberInput extends DialogCommand implements DialogDependencies {
-    private prompt = new NumberPrompt();
+    private numberPrompt = new NumberPrompt();
 
-    constructor(property: string, activity: string|Partial<Activity>) {
+    constructor(property?: string, activity?: string|Partial<Activity>) {
         super();
         this.property = property;
-        this.activity.value = activity;
+        this.activityProperty.value = activity;
     }
 
     protected onComputeID(): string {
@@ -24,8 +24,8 @@ export class NumberInput extends DialogCommand implements DialogDependencies {
 
     public getDependencies(): Dialog[] {
         // Update prompts ID before returning.
-        this.prompt.id = this.id + ':prompt';
-        return [this.prompt];
+        this.numberPrompt.id = this.id + ':prompt';
+        return [this.numberPrompt];
     }
 
     public configure(config: DialogConfiguration): this {
@@ -35,7 +35,15 @@ export class NumberInput extends DialogCommand implements DialogDependencies {
     /**
      * Activity to send the user.
      */
-    public activity = new ActivityProperty();
+    public set prompt(value: string|Partial<Activity>) {
+        this.activityProperty.value = value;
+    }
+
+    public get prompt(): string|Partial<Activity> {
+        return this.activityProperty.value;
+    }
+
+    private activityProperty = new ActivityProperty();
 
     /**
      * (Optional) data binds the called dialogs input & output to the given property.
@@ -58,8 +66,8 @@ export class NumberInput extends DialogCommand implements DialogDependencies {
         // Check value and only call if missing
         const value = dc.state.getValue(this.property);
         if (typeof value !== 'number') {
-            const activity = this.activity.format(dc, { utterance: dc.context.activity.text || '' });
-            return await dc.prompt(this.prompt.id, activity);
+            const activity = this.activityProperty.format(dc, { utterance: dc.context.activity.text || '' });
+            return await dc.prompt(this.numberPrompt.id, activity);
         } else {
             return await dc.endDialog();
         }
