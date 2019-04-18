@@ -3,8 +3,9 @@
 
 import * as restify from 'restify';
 import { BotFrameworkAdapter, MemoryStorage } from 'botbuilder';
-import { AdaptiveDialog, UnknownIntentRule, SendActivity, TextInput, IfCondition } from 'botbuilder-dialogs-adaptive';
+import { AdaptiveDialog, UnknownIntentRule, SendActivity, TextInput, IfCondition, SetProperty } from 'botbuilder-dialogs-adaptive';
 import { DialogManager } from 'botbuilder-dialogs';
+import { DialogDebugger } from 'botbuilder-dialogs-debug';
 
 // Create adapter.
 // See https://aka.ms/about-bot-adapter to learn more about .bot file its use and bot configuration.
@@ -22,7 +23,8 @@ server.listen(process.env.port || process.env.PORT || 3978, () => {
 });
 
 // Create bots DialogManager and bind to state storage
-const bot = new DialogManager();
+const bot = new DialogDebugger();
+//const bot = new DialogManager();
 bot.storage = new MemoryStorage();
 
 // Listen for incoming activities.
@@ -39,6 +41,7 @@ bot.rootDialog = dialogs;
 
 // Handle unknown intents
 dialogs.addRule(new UnknownIntentRule([
+    new SetProperty('user.name', 'null'),
     new IfCondition('user.name == null', [
         new TextInput('user.name', `Hi! what's your name?`),
     ]),

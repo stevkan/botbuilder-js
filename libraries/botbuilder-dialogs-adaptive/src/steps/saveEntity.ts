@@ -5,7 +5,7 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License.
  */
-import { DialogTurnResult, DialogConfiguration, DialogCommand, DialogContext } from 'botbuilder-dialogs';
+import { DialogTurnResult, DialogConfiguration, DialogCommand, DialogContext, DialogDebugEvents } from 'botbuilder-dialogs';
 
 export interface SaveEntityConfiguration extends DialogConfiguration {
     /**
@@ -53,6 +53,8 @@ export class SaveEntity extends DialogCommand {
     }
 
     protected async onRunCommand(dc: DialogContext): Promise<DialogTurnResult> {
+        dc.debugBreak(DialogDebugEvents.runStep);
+
         // Get entity
         const values: any|any[] = dc.state.getValue(this.entityName);
         if (Array.isArray(values) && values.length > 0) {

@@ -5,7 +5,7 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License.
  */
-import { DialogCommand, DialogTurnResult, Dialog, DialogConfiguration } from 'botbuilder-dialogs';
+import { DialogCommand, DialogTurnResult, Dialog, DialogConfiguration, DialogDebugEvents } from 'botbuilder-dialogs';
 import { PlanningContext, PlanStepState, PlanChangeType, PlanChangeList } from '../planningContext';
 
 export interface EditStepsConfiguration extends DialogConfiguration {
@@ -68,6 +68,8 @@ export class EditSteps extends DialogCommand {
     }
 
     protected async onRunCommand(planning: PlanningContext, options: object): Promise<DialogTurnResult> {
+        planning.debugBreak(DialogDebugEvents.runStep);
+
         // Ensure planning context and condition
         if (!(planning instanceof PlanningContext)) { throw new Error(`${this.id}: should only be used within a planning or sequence dialog.`) }
         if (this.changeType == undefined) { throw new Error(`${this.id}: no 'changeType' specified.`) }

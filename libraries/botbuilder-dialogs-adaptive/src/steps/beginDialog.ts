@@ -5,7 +5,7 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License.
  */
-import { Dialog, DialogTurnResult, DialogConfiguration, DialogContext } from 'botbuilder-dialogs';
+import { Dialog, DialogTurnResult, DialogConfiguration, DialogContext, DialogDebugEvents } from 'botbuilder-dialogs';
 
 export interface BeginDialogConfiguration extends DialogConfiguration {
     /**
@@ -98,6 +98,7 @@ export class BeginDialog<O extends object = {}> extends Dialog<O> {
     }
 
     public async beginDialog(dc: DialogContext, options?: O): Promise<DialogTurnResult> {
+        dc.debugBreak(DialogDebugEvents.runStep);
         options = Object.assign({}, options, this.options);
         return await dc.beginDialog(this.dialogId, options);
     }

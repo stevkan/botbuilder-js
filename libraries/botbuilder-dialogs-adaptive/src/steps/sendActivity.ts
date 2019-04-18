@@ -5,7 +5,7 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License.
  */
-import { DialogTurnResult, DialogConfiguration, Dialog, DialogCommand, DialogContext } from 'botbuilder-dialogs';
+import { DialogTurnResult, DialogConfiguration, Dialog, DialogCommand, DialogContext, DialogDebugEvents } from 'botbuilder-dialogs';
 import { Activity, InputHints } from 'botbuilder-core';
 import { ActivityProperty } from '../activityProperty';
 
@@ -79,6 +79,8 @@ export class SendActivity extends DialogCommand {
     }
     
     protected async onRunCommand(dc: DialogContext, options: object): Promise<DialogTurnResult> {
+        dc.debugBreak(DialogDebugEvents.runStep);
+
         if (!this.activity.hasValue()) {
             throw new Error(`SendActivity: no activity assigned for step '${this.id}'.`) 
         } 

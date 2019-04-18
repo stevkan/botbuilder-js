@@ -5,7 +5,7 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License.
  */
-import { DialogTurnResult, DialogConfiguration, Dialog, DialogCommand, DialogContext } from 'botbuilder-dialogs';
+import { DialogTurnResult, DialogConfiguration, Dialog, DialogCommand, DialogContext, DialogDebugEvents } from 'botbuilder-dialogs';
 
 export interface RepeatDialogConfiguration extends DialogConfiguration {
     /**
@@ -47,6 +47,7 @@ export class RepeatDialog extends DialogCommand {
     }
 
     protected async onRunCommand(dc: DialogContext, options?: object): Promise<DialogTurnResult> {
+        dc.debugBreak(DialogDebugEvents.runStep);
         const originalOptions = dc.state.dialog.get('options');
         options = Object.assign({}, originalOptions, options, this.options);
         return await this.repeatParentDialog(dc, options);

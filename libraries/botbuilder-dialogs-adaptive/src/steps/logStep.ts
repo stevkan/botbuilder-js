@@ -5,7 +5,7 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License.
  */
-import { DialogTurnResult, DialogConfiguration, DialogCommand, DialogContext } from 'botbuilder-dialogs';
+import { DialogTurnResult, DialogConfiguration, DialogCommand, DialogContext, DialogDebugEvents } from 'botbuilder-dialogs';
 import { format } from '../stringTemplate';
 import { Activity, ActivityTypes } from 'botbuilder-core';
 
@@ -56,6 +56,7 @@ export class LogStep extends DialogCommand {
     }
     
     protected async onRunCommand(dc: DialogContext, options: object): Promise<DialogTurnResult> {
+        dc.debugBreak(DialogDebugEvents.runStep);
         if (!this.template) { throw new Error(`${this.id}: no 'message' specified.`) } 
 
         // Format message

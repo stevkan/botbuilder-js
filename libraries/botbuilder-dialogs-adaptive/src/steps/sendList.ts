@@ -5,7 +5,7 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License.
  */
-import { DialogTurnResult, DialogConfiguration, DialogCommand, DialogContext } from 'botbuilder-dialogs';
+import { DialogTurnResult, DialogConfiguration, DialogCommand, DialogContext, DialogDebugEvents } from 'botbuilder-dialogs';
 import { ActivityProperty } from '../activityProperty';
 
 export interface SendListConfiguration extends DialogConfiguration {
@@ -80,6 +80,8 @@ export class SendList extends DialogCommand {
     }
 
     protected async onRunCommand(dc: DialogContext): Promise<DialogTurnResult> {
+        dc.debugBreak(DialogDebugEvents.runStep);
+
         // Ensure templates configured
         if (!this.messageTemplate) {
             this.messageTemplate = '{list}';

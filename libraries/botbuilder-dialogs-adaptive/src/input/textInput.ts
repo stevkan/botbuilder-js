@@ -6,7 +6,7 @@
  * Licensed under the MIT License.
  */
 import { Activity } from "botbuilder-core";
-import { DialogCommand, DialogDependencies, TextPrompt, Dialog, DialogConfiguration, DialogContext, DialogTurnResult } from "botbuilder-dialogs";
+import { DialogCommand, DialogDependencies, TextPrompt, Dialog, DialogConfiguration, DialogContext, DialogTurnResult, DialogDebugEvents } from "botbuilder-dialogs";
 import { TextSlotConfiguration } from "./textSlot";
 import { ActivityProperty } from "../activityProperty";
 
@@ -60,6 +60,8 @@ export class TextInput extends DialogCommand implements DialogDependencies {
     }
 
     public async onRunCommand(dc: DialogContext): Promise<DialogTurnResult> {
+        dc.debugBreak(DialogDebugEvents.runStep);
+
         // Check value and only call if missing
         const value = dc.state.getValue(this.property);
         if (typeof value !== 'string' || value.length == 0) {

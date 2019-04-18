@@ -5,7 +5,7 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License.
  */
-import { DialogTurnResult, DialogCommand, DialogContext, DialogConfiguration } from 'botbuilder-dialogs';
+import { DialogTurnResult, DialogCommand, DialogContext, DialogConfiguration, DialogDebugEvents } from 'botbuilder-dialogs';
 
 export interface EditArrayConfiguration extends DialogConfiguration {
     changeType?: ArrayChangeType;
@@ -49,6 +49,7 @@ export class EditArray extends DialogCommand {
     }
 
     protected async onRunCommand(dc: DialogContext, options: object): Promise<DialogTurnResult> {
+        dc.debugBreak(DialogDebugEvents.runStep);
         if (!this.arrayProperty) { throw new Error(`EditArray: "${this.changeType}" operation couldn't be performed because the listProperty wasn't specified.`) }
 
         // Get list and ensure populated

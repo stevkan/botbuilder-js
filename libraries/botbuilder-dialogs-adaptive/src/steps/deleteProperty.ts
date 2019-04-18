@@ -5,7 +5,7 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License.
  */
-import { DialogTurnResult, DialogConfiguration, DialogContext, DialogCommand } from 'botbuilder-dialogs';
+import { DialogTurnResult, DialogConfiguration, DialogContext, DialogCommand, DialogDebugEvents } from 'botbuilder-dialogs';
 
 export interface DeletePropertyConfiguration extends DialogConfiguration {
     /**
@@ -38,6 +38,7 @@ export class DeleteProperty<O extends object = {}> extends DialogCommand<O> {
     }
 
     public async onRunCommand(dc: DialogContext): Promise<DialogTurnResult> {
+        dc.debugBreak(DialogDebugEvents.runStep);
         dc.state.setValue(this.property, undefined);
         return await dc.endDialog();
     }

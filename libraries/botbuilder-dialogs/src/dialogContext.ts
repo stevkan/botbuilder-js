@@ -14,6 +14,8 @@ import { StateMap } from './stateMap';
 import { DialogContextState } from './dialogContextState';
 import { DialogCommand } from './dialogCommand';
 
+const BREAK_ON_EVENTS = Symbol('breakOn');
+
 /**
  * State information persisted by a `DialogSet`.
  */
@@ -546,6 +548,53 @@ export class DialogContext {
             }
         }
         return true;
+    }
+
+    public debugBreak(event: string, target?: any): void {
+        if (this.shouldBreak(event)) {
+            const _dialog = this.getCurrentDialog();
+            const _dialogPath = this.getDialogPath();
+            const _event = event;
+            const _memory = this.state.toJSON();
+            const _target = target;
+            debugger;
+        }
+    }
+
+    public breakOn(events: string[]): void {
+        this.context.turnState.set(BREAK_ON_EVENTS, events);
+    }
+
+    private shouldBreak(event: string): boolean {
+        const events = this.context.turnState.get(BREAK_ON_EVENTS) || [];
+        return events.indexOf(event) >= 0;
+    }
+
+    private getCurrentDialog(): Dialog|undefined {
+        const activeDialog = this.activeDialog;
+        return activeDialog ? this.findDialog(activeDialog.id) : undefined;
+    }
+
+    private getDialogPath(): string {
+        let path = '';
+        let connector = '';
+        let dc: DialogContext = this;
+        while (true) {
+            // Traverse stack
+            const stack = dc.stack;
+            for (let i = stack.length - 1; i >= 0; i--) {
+                path = stack[i].id + connector + path;
+                connector = '/';
+            }
+
+            // Traverse parent
+            dc = dc.parent;
+            if (!dc) {
+                break;
+            }
+        }
+
+        return path;
     }
 
     private async endActiveDialog(reason: DialogReason, result?: any): Promise<void> {

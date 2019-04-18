@@ -5,7 +5,7 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License.
  */
-import { Dialog, DialogTurnResult, DialogContext, DialogConfiguration, DialogDependencies, DialogCommand, ChoicePrompt, FoundChoice, DialogReason } from 'botbuilder-dialogs';
+import { Dialog, DialogTurnResult, DialogContext, DialogConfiguration, DialogDependencies, DialogCommand, ChoicePrompt, FoundChoice, DialogReason, DialogDebugEvents } from 'botbuilder-dialogs';
 import { ActivityProperty } from '../activityProperty';
 import { Activity } from 'botbuilder-core';
 
@@ -64,6 +64,8 @@ export class ChoiceInput extends DialogCommand implements DialogDependencies {
     }
 
     public async onRunCommand(dc: DialogContext): Promise<DialogTurnResult> {
+        dc.debugBreak(DialogDebugEvents.runStep);
+
         // Check value and only call if missing
         const value = dc.state.getValue(this.property);
         if (value === undefined) {

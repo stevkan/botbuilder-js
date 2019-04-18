@@ -5,7 +5,7 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License.
  */
-import { DialogTurnResult, DialogConfiguration, Dialog, DialogCommand, DialogContext } from 'botbuilder-dialogs';
+import { DialogTurnResult, DialogConfiguration, DialogCommand, DialogContext, DialogDebugEvents } from 'botbuilder-dialogs';
 
 export interface ReplaceDialogConfiguration extends DialogConfiguration {
     /**
@@ -61,6 +61,7 @@ export class ReplaceDialog extends DialogCommand {
     }
 
     protected async onRunCommand(dc: DialogContext, options?: object): Promise<DialogTurnResult> {
+        dc.debugBreak(DialogDebugEvents.runStep);
         options = Object.assign({}, options, this.options);
         return await this.replaceParentDialog(dc, this.dialogId, options);
     }

@@ -5,7 +5,7 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License.
  */
-import { Dialog, DialogTurnResult, DialogContext, ConfirmPrompt, DialogConfiguration, DialogDependencies, DialogCommand } from 'botbuilder-dialogs';
+import { Dialog, DialogTurnResult, DialogContext, ConfirmPrompt, DialogConfiguration, DialogDependencies, DialogCommand, DialogDebugEvents } from 'botbuilder-dialogs';
 import { ActivityProperty } from '../activityProperty';
 import { Activity } from 'botbuilder-core';
 
@@ -58,6 +58,8 @@ export class ConfirmInput extends DialogCommand implements DialogDependencies {
     }
 
     public async onRunCommand(dc: DialogContext): Promise<DialogTurnResult> {
+        dc.debugBreak(DialogDebugEvents.runStep);
+
         // Check value and only call if missing
         const value = dc.state.getValue(this.property);
         if (typeof value !== 'boolean' || this.allwaysPrompt) {

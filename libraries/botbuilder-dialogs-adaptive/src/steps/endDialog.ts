@@ -5,7 +5,7 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License.
  */
-import { DialogTurnResult, DialogConfiguration, DialogCommand, DialogContext } from 'botbuilder-dialogs';
+import { DialogTurnResult, DialogConfiguration, DialogCommand, DialogContext, DialogDebugEvents } from 'botbuilder-dialogs';
 
 export interface EndDialogConfiguration extends DialogConfiguration {
     /**
@@ -41,6 +41,7 @@ export class EndDialog extends DialogCommand {
     public resultProperty: string;
 
     protected async onRunCommand(dc: DialogContext): Promise<DialogTurnResult> {
+        dc.debugBreak(DialogDebugEvents.runStep);
         const result = this.resultProperty ? dc.state.getValue(this.resultProperty) : undefined;
         return await this.endParentDialog(dc, result);
     }

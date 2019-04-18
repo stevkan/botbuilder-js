@@ -5,7 +5,7 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License.
  */
-import { DialogTurnResult, DialogCommand, DialogContext } from 'botbuilder-dialogs';
+import { DialogTurnResult, DialogCommand, DialogContext, DialogDebugEvents } from 'botbuilder-dialogs';
 import { PlanningContext } from '../planningContext';
 
 export type CodeStepHandler<T extends DialogContext = PlanningContext> = (context: T, options?: object) => Promise<DialogTurnResult>;
@@ -28,7 +28,8 @@ export class CodeStep<T extends DialogContext = PlanningContext> extends DialogC
         return `codeStep[${this.hashedLabel(this.handler.toString())}]`;
     }
     
-    protected async onRunCommand(context: T, options: object): Promise<DialogTurnResult> {
-        return await this.handler(context, options);
+    protected async onRunCommand(dc: T, options: object): Promise<DialogTurnResult> {
+        dc.debugBreak(DialogDebugEvents.runStep);
+        return await this.handler(dc, options);
     }
 }

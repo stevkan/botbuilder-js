@@ -5,7 +5,7 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License.
  */
-import { DialogTurnResult, DialogCommand, DialogContext, DialogConfiguration, Dialog, DialogReason } from 'botbuilder-dialogs';
+import { DialogTurnResult, DialogCommand, DialogContext, DialogConfiguration, Dialog, DialogReason, DialogDebugEvents } from 'botbuilder-dialogs';
 
 export interface EmitEventConfiguration extends DialogConfiguration {
     eventName?: string;
@@ -61,12 +61,12 @@ export class EmitEvent extends DialogCommand {
     }
     
     protected async onRunCommand(dc: DialogContext, options: object): Promise<DialogTurnResult> {
+        dc.debugBreak(DialogDebugEvents.runStep);
         const opt = Object.assign({
             eventName: this.eventName,
             eventValue: this.eventValue,
             bubbleEvent: this.bubbleEvent
         }, options);
-
         const handled = await dc.emitEvent(opt.eventName, opt.eventValue, opt.bubbleEvent);
         if (handled) {
             // Defer continuation of plan until next turn

@@ -5,7 +5,7 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License.
  */
-import { DialogTurnResult, DialogCommand, DialogContext, DialogConfiguration } from 'botbuilder-dialogs';
+import { DialogTurnResult, DialogCommand, DialogContext, DialogConfiguration, DialogDebugEvents } from 'botbuilder-dialogs';
 
 export interface CancelDialogConfiguration extends DialogConfiguration {
     eventName?: string;
@@ -48,6 +48,7 @@ export class CancelDialog extends DialogCommand {
     }
     
     protected async onRunCommand(dc: DialogContext, options: object): Promise<DialogTurnResult> {
+        dc.debugBreak(DialogDebugEvents.runStep);
         const opt = Object.assign({
             eventName: this.eventName,
             eventValue: this.eventValue

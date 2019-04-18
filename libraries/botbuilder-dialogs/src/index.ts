@@ -14,6 +14,7 @@ export * from './dialog';
 export * from './dialogCommand';
 export * from './dialogContext';
 export * from './dialogContextState';
+export * from './dialogDebugEvents';
 export * from './dialogManager';
 export * from './dialogSet';
 export * from './stateMap';

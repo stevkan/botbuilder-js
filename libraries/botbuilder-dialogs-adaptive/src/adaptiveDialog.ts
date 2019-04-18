@@ -11,7 +11,7 @@ import {
 } from 'botbuilder-core';
 import { 
     Dialog, DialogInstance, DialogReason, DialogTurnResult, DialogTurnStatus, DialogEvent,
-    DialogContext, DialogSet, StateMap, DialogConsultation, DialogConsultationDesire, DialogConfiguration, DialogContextVisibleState
+    DialogContext, DialogSet, StateMap, DialogConsultation, DialogConsultationDesire, DialogConfiguration, DialogContextVisibleState, DialogDebugEvents
 } from 'botbuilder-dialogs';
 import { 
     RuleDialogEventNames, PlanningContext, RuleDialogState as AdaptiveDialogState, PlanChangeList, PlanChangeType 
@@ -259,7 +259,7 @@ export class AdaptiveDialog<O extends object = {}> extends Dialog<O> {
                     const activity = planning.context.activity;
                     if (activity.type === ActivityTypes.Message) {
                         // Recognize utterance
-                        const recognized = await this.onRecognize(planning.context);
+                        const recognized = await this.onRecognize(planning);
     
                         // Dispatch utteranceRecognized event
                         handled = await this.evaluateRules(planning, { name: RuleDialogEventNames.recognizedIntent, value: recognized, bubble: false });
@@ -291,8 +291,8 @@ export class AdaptiveDialog<O extends object = {}> extends Dialog<O> {
         return handled;
     }
 
-    protected async onRecognize(context: TurnContext): Promise<RecognizerResult> {
-        const { text, value } = context.activity;
+    protected async onRecognize(planning: PlanningContext): Promise<RecognizerResult> {
+        const { text, value } = planning.context.activity;
         const noneIntent: RecognizerResult = {
             text: text || '',
             intents: { 'None': { score: 0.0 } },
@@ -300,9 +300,10 @@ export class AdaptiveDialog<O extends object = {}> extends Dialog<O> {
         };
 
         // Check for submission of an adaptive card
+        let recognized: RecognizerResult = noneIntent;
         if (!text && typeof value == 'object' && typeof value['intent'] == 'string') {
             // Map submitted values to a recognizer result
-            const recognized: RecognizerResult = {
+            recognized = {
                 text: '',
                 intents: {},
                 entities: {}
@@ -316,13 +317,11 @@ export class AdaptiveDialog<O extends object = {}> extends Dialog<O> {
                     }
                 }
             }
-
-            return recognized;
         } else if (this.recognizer) {
             // Call recognizer as normal and filter to top intent
             let topIntent: string;
             let topScore = -1;
-            const recognized = await this.recognizer.recognize(context);
+            recognized = await this.recognizer.recognize(planning.context);
             for (const key in recognized.intents) {
                 if (recognized.intents.hasOwnProperty(key)) {
                     if (topIntent == undefined) {
@@ -337,11 +336,10 @@ export class AdaptiveDialog<O extends object = {}> extends Dialog<O> {
                     }
                 }
             }
-
-            return recognized;
-        } else {
-            return noneIntent;
         }
+
+        planning.debugBreak(DialogDebugEvents.recognizerCalled, recognized);
+        return recognized;
     }
 
     private async queueFirstMatch(planning: PlanningContext, event: DialogEvent): Promise<boolean> {

@@ -9,6 +9,7 @@
     "libraries/botbuilder-core",
     "libraries/botbuilder-dialogs",
     "libraries/botbuilder-dialogs-adaptive",
+    "libraries/botbuilder-dialogs-debug",
     "libraries/botbuilder-dialogs-declarative",
     "libraries/botbuilder-expression",
     "libraries/botbuilder-expression-parser",

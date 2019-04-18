@@ -35,7 +35,7 @@ export interface PersistedStateKeys {
     conversationState: string;
 }
 
-export interface BotConfiguration {
+export interface DialogManagerConfiguration {
     /**
      * Root dialog to start from [onTurn()](#onturn) or [run()](#run) method.
      */
@@ -86,7 +86,7 @@ export class DialogManager extends Configurable  {
      */
     public storage?: Storage;
 
-    public configure(config: BotConfiguration): this {
+    public configure(config: DialogManagerConfiguration): this {
         return super.configure(config);
     }
 
@@ -127,11 +127,8 @@ export class DialogManager extends Configurable  {
         const conversationState = new StateMap(newState.conversationState);
         const dc = new DialogContext(this.main, context, newState.conversationState._dialogs, userState, conversationState);
 
-        // Execute component
-        let result = await dc.continueDialog();
-        if (result.status == DialogTurnStatus.empty) {
-            result = await dc.beginDialog(this.mainId);
-        }
+        // Continue dialog
+        const result = await this.onContinueDialog(dc);
 
         // Save snapshot of final state for the turn
         context.turnState.set(DialogManager.PersistedStateSnapshotKey, newState);
@@ -154,6 +151,13 @@ export class DialogManager extends Configurable  {
         return result;
     }
 
+    protected async onContinueDialog(dc: DialogContext): Promise<DialogTurnResult> {
+        let result = await dc.continueDialog();
+        if (result.status == DialogTurnStatus.empty) {
+            result = await dc.beginDialog(this.mainId);
+        }
+        return result;
+    }
 
     //---------------------------------------------------------------------------------------------
     // State loading
