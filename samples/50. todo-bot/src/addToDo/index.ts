@@ -7,7 +7,6 @@ import { getRecognizer } from "../recognizer";
 export class AddToDo extends AdaptiveDialog {
     constructor() {
         super('AddToDo', [
-            new LogStep(`AddToDo: entities = {turn.entities}`, true),
             new SaveEntity('$title', '@title'),
             new TextInput('$title', `What would you like to call your new todo?`),
             new EditArray(ArrayChangeType.push, 'user.todos', '$title'),

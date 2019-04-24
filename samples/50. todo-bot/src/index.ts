@@ -5,6 +5,7 @@ import * as restify from 'restify';
 import { BotFrameworkAdapter, MemoryStorage } from 'botbuilder';
 import { DialogManager } from 'botbuilder-dialogs';
 import { RootDialog } from './rootDialog';
+import { DialogDebugger } from 'botbuilder-dialogs-debug';
 
 // Create HTTP server.
 const server = restify.createServer();
@@ -22,7 +23,8 @@ const adapter = new BotFrameworkAdapter({
 });
 
 // Create bots DialogManager and bind to state storage
-const bot = new DialogManager();
+const bot = new DialogDebugger();
+//const bot = new DialogManager();
 bot.storage = new MemoryStorage();
 bot.rootDialog = new RootDialog();
 
