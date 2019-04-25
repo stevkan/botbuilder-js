@@ -8,7 +8,7 @@
 import { Activity, TurnContext } from 'botbuilder-core';
 import { Choice } from './choices';
 import { Dialog, DialogInstance, DialogReason, DialogTurnResult, DialogTurnStatus, DialogEvent, DialogConsultation } from './dialog';
-import { DialogSet } from './dialogSet';
+import { DialogSet, DialogDependencies } from './dialogSet';
 import { PromptOptions } from './prompts';
 import { StateMap } from './stateMap';
 import { DialogContextState } from './dialogContextState';
@@ -556,6 +556,7 @@ export class DialogContext {
             const _dialogPath = this.getDialogPath();
             const _event = event;
             const _memory = this.state.toJSON();
+            const _sequence = this.getSequence();
             const _target = target;
             debugger;
         }
@@ -596,6 +597,54 @@ export class DialogContext {
 
         return path;
     }
+
+    private getSequence(): string {
+        let sequence = '';
+        const dialog = this.activeDialog;
+        if (dialog && dialog.state && dialog.state.plan && dialog.state.plan.steps) {
+            const steps: { dialogId: string; }[] = dialog.state.plan.steps;
+            steps.forEach((stepState) => {
+                const step = this.findDialog(stepState.dialogId);
+                if (step) {
+                    sequence += this.getSequenceForStep(step);
+                }
+            })
+        }
+
+        return sequence;
+    }
+
+    private getSequenceForStep(step: Dialog, depth = 0): string {
+        let sequence = `${this.indentSequenceStep(depth)}${step.id}\n`;
+        if (Array.isArray((step as any).steps)) {
+            const children = (step as any).steps as Dialog[];
+            if (children.length > 0) {
+                children.forEach((child) => {
+                    sequence += this.getSequenceForStep(child, depth + 1);
+                });
+            }
+        }
+        if (Array.isArray((step as any).elseSteps)) {
+            const children = (step as any).elseSteps as Dialog[];
+            if (children.length > 0) {
+                sequence += 'else\n';
+                children.forEach((child) => {
+                    sequence += this.getSequenceForStep(child, depth + 1);
+                });
+            }
+        }
+
+        return sequence;
+    }
+
+    private indentSequenceStep(depth: number): string {
+        let sequence = '';
+        for (let i = 0; i < depth; i++) {
+            sequence += ' . ';
+        }
+        return sequence;
+    }
+
 
     private async endActiveDialog(reason: DialogReason, result?: any): Promise<void> {
         const instance: DialogInstance = this.activeDialog;
