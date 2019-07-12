@@ -832,6 +832,73 @@ export class BuiltInFunctions {
         }
     }
 
+    
+
+    private static CanBeModified(value: object, property: string, expected?: number): boolean {
+        let modifiable = false;
+        if (expected !== undefined) {
+            modifiable = (value instanceof Array)
+        } else {
+            modifiable = ((value instanceof Map) || (typeof(value) === "string" && typeof(JSON.parse(value)) === "object" ))
+            if (!modifiable) {
+                const propertyArray = Object.getOwnPropertyNames(value);
+                for (const propertyName of propertyArray) {
+                    if (propertyName.toLowerCase() === property) {
+                        modifiable = true;
+                        break;
+                    }
+                }  
+            }
+        }
+
+        return modifiable;
+    }    
+
+    private static setProperty(instance: object, property: string , value: object): {result: object} {
+        let result: object = value;
+        property = property.toLowerCase();
+
+        if (instance instanceof Map) {
+            instance.set(property, value) 
+        } else if (typeof(value) === "string" && typeof(JSON.parse(value)) === "object") {
+            const jsonObject = JSON.parse(value);
+            jsonObject[property] = value;
+            result = jsonObject;
+        } else {
+
+        }
+    }
+
+    private static SetPathToValue(path: Expression, valueToSet: object, state: object , expected?: number): {value:any; error: string} {
+        let result: object;
+        let error: string;
+        let instance: object;
+        let index: object;
+        const children: Expression[] = path.Children;
+        if (typeof path === ExpressionType.Accessor || typeof path === ExpressionType.Element) {
+            ({value: index, error} = children[typeof path === ExpressionType.Accessor? 0 : 1].tryEvaluate(state));
+            if (error === undefined) {
+                const iindex = (typeof index === "number" && Number.isInteger(index))? index: undefined;
+                if (children.length === 2) {
+                    ({value: instance, error} = this.SetPathToValue(children[typeof path === ExpressionType.Accessor? 1:0], iindex, null, state));
+                } else {
+                    instance = state;
+                }
+
+                if (error === undefined) {
+                    if (typeof index === "string") {
+                        const propName = index;
+                        if (valueToSet !== undefined) {
+                            
+                    }
+                }
+
+            }
+        }
+
+    }
+
+
     private static Foreach(expression: Expression, state: any): { value: any; error: string } {
         let result: any[];
         let error: string;
