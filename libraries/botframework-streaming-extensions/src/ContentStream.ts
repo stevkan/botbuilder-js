@@ -6,7 +6,7 @@
  * Licensed under the MIT License.
  */
 import { ContentStreamAssembler } from './Assemblers/ContentStreamAssembler';
-import { Stream } from './Stream';
+import { Duplex as Stream } from 'stream';
 
 export class ContentStream {
     public id: string;
@@ -90,8 +90,8 @@ export class ContentStream {
         let stream = this.getStream();
 
         // populate the array with any existing buffers
-        while (count < stream.length) {
-            let chunk = stream.read(stream.length);
+        while (count < stream.readableLength) {
+            let chunk = stream.read(stream.readableLength);
             allData.push(chunk);
             count += (<Buffer>chunk).length;
         }
@@ -105,8 +105,7 @@ export class ContentStream {
                         resolve(true);
                     }
                 };
-
-                stream.subscribe(callback(this));
+                stream.on('data', callback(this));
             });
 
             await readToEnd;

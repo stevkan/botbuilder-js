@@ -7,7 +7,7 @@
  */
 import { Header } from '../Models/Header';
 import { HeaderSerializer } from '../Payloads/HeaderSerializer';
-import { Stream } from '../Stream';
+import { Duplex as Stream } from 'stream';
 import { ITransportSender } from '../Transport/ITransportSender';
 import { TransportConstants } from '../Transport/TransportConstants';
 import { SendPacket } from './SendPacket';

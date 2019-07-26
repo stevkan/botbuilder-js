@@ -6,7 +6,7 @@
  * Licensed under the MIT License.
  */
 import { Header } from '../Models/Header';
-import { Stream } from '../Stream';
+import { Duplex as Stream } from 'stream';
 
 export abstract class PayloadAssembler {
     public id: string;

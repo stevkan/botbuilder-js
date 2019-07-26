@@ -7,7 +7,7 @@
  */
 import { ContentStreamAssembler } from '../Assemblers/ContentStreamAssembler';
 import { Header } from '../Models/Header';
-import { Stream } from '../Stream';
+import { Duplex as Stream } from 'stream';
 
 export class StreamManager {
     private readonly activeAssemblers = [];
@@ -53,7 +53,7 @@ export class StreamManager {
             this.activeAssemblers.splice(this.activeAssemblers.indexOf(id), 1);
             let targetStream = assembler.getPayloadStream();
             if ((assembler.contentLength !== undefined
-        && targetStream.length < assembler.contentLength)
+        && targetStream.readableLength < assembler.contentLength)
         || !assembler.end) {
                 this.onCancelStream(assembler);
             }

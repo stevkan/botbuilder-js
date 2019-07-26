@@ -6,7 +6,7 @@
  * Licensed under the MIT License.
  */
 import { HttpContent, HttpContentStream } from './HttpContentStream';
-import { Stream } from './Stream';
+import { Duplex as Stream } from 'stream';
 
 export class StreamingRequest {
     /// <summary>
@@ -66,7 +66,7 @@ export class StreamingRequest {
             stream.write(body, 'utf8');
             this.addStream(new HttpContent({
                 contentType: 'application/json; charset=utf-8',
-                contentLength: stream.length
+                contentLength: stream.readableLength
             },
             // tslint:disable-next-line: align
             stream));

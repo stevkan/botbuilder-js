@@ -7,7 +7,7 @@
  */
 import { HttpContentStream } from '../HttpContentStream';
 import { PayloadSender } from '../PayloadTransport/PayloadSender';
-import { Stream } from '../Stream';
+import { Duplex as Stream } from 'stream';
 import { PayloadTypes } from '../Models/PayloadTypes';
 import { PayloadDisassembler } from './PayloadDisassembler';
 import { StreamWrapper } from './StreamWrapper';
@@ -25,6 +25,6 @@ export class HttpContentStreamDisassembler extends PayloadDisassembler {
     public async getStream(): Promise<StreamWrapper> {
         let stream: Stream = this.contentStream.content.getStream();
 
-        return new StreamWrapper(stream, stream.length);
+        return new StreamWrapper(stream, stream.readableLength);
     }
 }

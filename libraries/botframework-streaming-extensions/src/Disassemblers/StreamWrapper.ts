@@ -5,7 +5,7 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License.
  */
-import { Stream } from '../Stream';
+import { Duplex as Stream } from 'stream';
 
 export class StreamWrapper {
     public stream: Stream;

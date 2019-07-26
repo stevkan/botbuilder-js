@@ -10,7 +10,7 @@ import { Header } from '../Models/Header';
 import { PayloadTypes } from '../Models/PayloadTypes';
 import { StreamDescription } from '../Models/StreamDescription';
 import { PayloadSender } from '../PayloadTransport/PayloadSender';
-import { Stream } from '../Stream';
+import { Duplex as Stream } from 'stream';
 import { StreamWrapper } from './StreamWrapper';
 
 export abstract class PayloadDisassembler {
@@ -45,7 +45,7 @@ export abstract class PayloadDisassembler {
         stream.write(JSON.stringify(item));
         stream.end();
 
-        return new StreamWrapper(stream, stream.length);
+        return new StreamWrapper(stream, stream.readableLength);
     }
 
     public abstract async getStream(): Promise<StreamWrapper>;

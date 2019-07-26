@@ -7,7 +7,7 @@
  */
 import { Header } from '../Models/Header';
 import { StreamManager } from '../Payloads/StreamManager';
-import { Stream } from '../Stream';
+import { Duplex as Stream } from 'stream';
 import { PayloadAssembler } from './PayloadAssembler';
 
 export class ContentStreamAssembler extends PayloadAssembler {

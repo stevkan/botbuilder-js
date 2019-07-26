@@ -5,7 +5,7 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License.
  */
-import { Stream } from '../Stream';
+import { Duplex as Stream } from 'stream';
 import { PayloadAssembler } from '../Assemblers/PayloadAssembler';
 import { ReceiveRequestAssembler } from '../Assemblers/ReceiveRequestAssembler';
 import { ReceiveResponseAssembler } from '../Assemblers/ReceiveResponseAssembler';
@@ -13,7 +13,7 @@ import { StreamManager } from './StreamManager';
 import { Header } from '../Models/Header';
 import { PayloadTypes } from '../Models/PayloadTypes';
 
-export class PayloadAssembleManager {
+export class PayloadAssemblerManager {
     private readonly onReceiveRequest;
     private readonly onReceiveResponse;
     private readonly streamManager: StreamManager;

@@ -10,7 +10,7 @@ import { Header } from '../Models/Header';
 import { ResponsePayload } from '../Models/ResponsePayload';
 import { StreamManager } from '../Payloads/StreamManager';
 import { ReceiveResponse } from '../ReceiveResponse';
-import { Stream } from '../Stream';
+import { Duplex as Stream } from 'stream';
 import { ContentStreamAssembler } from './ContentStreamAssembler';
 import { PayloadAssembler } from './PayloadAssembler';
 
@@ -48,7 +48,7 @@ export class ReceiveResponseAssembler extends PayloadAssembler {
     }
 
     private async processResponse(stream: Stream): Promise<void> {
-        let s: Buffer = stream.read(stream.length) as Buffer;
+        let s: Buffer = stream.read(stream.readableLength) as Buffer;
         if (!s) {
             return;
         }

@@ -6,7 +6,7 @@
  * Licensed under the MIT License.
  */
 import { HttpContent, HttpContentStream } from './HttpContentStream';
-import { Stream } from './Stream';
+import { Duplex as Stream } from 'stream';
 
 export class StreamingResponse {
     public statusCode: number;
@@ -48,7 +48,7 @@ export class StreamingResponse {
         stream.write(JSON.stringify(body), 'utf8');
         this.addStream(new HttpContent({
             contentType: 'application/json; charset=utf-8',
-            contentLength: stream.length
+            contentLength: stream.readableLength
             // tslint:disable-next-line: align
         }, stream));
     }

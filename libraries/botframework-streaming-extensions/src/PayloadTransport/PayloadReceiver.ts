@@ -9,7 +9,7 @@ import { TransportDisconnectedEventHandler } from '.';
 import { Header } from '../Models/Header';
 import { PayloadTypes } from '../Models/PayloadTypes';
 import { HeaderSerializer } from '../Payloads/HeaderSerializer';
-import { Stream } from '../Stream';
+import { Duplex as Stream } from 'stream';
 import { ITransportReceiver } from '../Transport/ITransportReceiver';
 import { TransportConstants } from '../Transport/TransportConstants';
 import { TransportDisconnectedEventArgs } from './TransportDisconnectedEventArgs';
