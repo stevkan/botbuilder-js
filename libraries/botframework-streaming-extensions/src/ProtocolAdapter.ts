@@ -16,7 +16,7 @@ import { PayloadSender } from './PayloadTransport/PayloadSender';
 import { ReceiveRequest } from './ReceiveRequest';
 import { ReceiveResponse } from './ReceiveResponse';
 import { RequestHandler } from './RequestHandler';
-import { Duplex as Stream } from 'stream';
+import { Duplex } from 'stream';
 import { StreamingRequest } from './StreamingRequest';
 import { generateGuid } from './Utilities/protocol-base';
 
@@ -45,7 +45,7 @@ export class ProtocolAdapter {
         this.streamManager = new StreamManager(this.onCancelStream);
         this.assemblerManager = new PayloadAssemblerManager(this.streamManager, (id: string, response: ReceiveResponse) => this.onReceiveResponse(id, response), (id: string, request: ReceiveRequest) => this.onReceiveRequest(id, request));
         // tslint:disable-next-line: no-void-expression
-        this.payloadReceiver.subscribe((header: Header) => this.assemblerManager.getPayloadStream(header), (header: Header, contentStream: Stream, contentLength: number) => this.assemblerManager.onReceive(header, contentStream, contentLength));
+        this.payloadReceiver.subscribe((header: Header) => this.assemblerManager.getPayloadStream(header), (header: Header, contentStream: Duplex, contentLength: number) => this.assemblerManager.onReceive(header, contentStream, contentLength));
     }
 
     /// <summary>

@@ -6,12 +6,13 @@
  * Licensed under the MIT License.
  */
 import { ContentStreamAssembler } from './Assemblers/ContentStreamAssembler';
-import { Duplex as Stream } from 'stream';
+import { Duplex } from 'stream';
+import { BasicStream } from './BasicStream';
 
 export class ContentStream {
     public id: string;
     private readonly assembler: ContentStreamAssembler;
-    private stream: Stream;
+    private stream: BasicStream;
 
     constructor(id: string, assembler: ContentStreamAssembler) {
         if (assembler === undefined) {
@@ -29,7 +30,7 @@ export class ContentStream {
         return this.assembler.contentLength;
     }
 
-    public getStream(): Stream {
+    public getStream(): BasicStream {
         if (this.stream === undefined) {
             this.stream = this.assembler.getPayloadStream();
         }
@@ -43,10 +44,8 @@ export class ContentStream {
 
     public async readAsString(): Promise<string> {
         let obj = await this.readAll();
-        // tslint:disable-next-line: no-string-literal
         let allData = obj['bufferArray'];
         let s = '';
-        // tslint:disable-next-line: prefer-for-of
         for (let i = 0; i < allData.length; i++) {
             s += allData[i].toString('utf8');
         }
@@ -55,17 +54,12 @@ export class ContentStream {
     }
 
     public async readAsBuffer(): Promise<Buffer> {
-    // do a read-all
         let obj = await this.readAll();
-        // tslint:disable-next-line: no-string-literal
         let allData = obj['bufferArray'];
-        // tslint:disable-next-line: no-string-literal
         let count = obj['size'];
         let s = Buffer.alloc(count);
         let ptr = 0;
-        // tslint:disable-next-line: prefer-for-of
         for (let i = 0; i < allData.length; i++) {
-            // tslint:disable-next-line: prefer-for-of
             for (let j = 0 ; j < allData[i].length; j++) {
                 s[ptr++] = allData[i][j];
             }
@@ -84,14 +78,13 @@ export class ContentStream {
     }
 
     private async readAll(): Promise<Record<string, any>> {
-    // do a read-all
         let allData: Buffer[] = [];
         let count = 0;
         let stream = this.getStream();
 
         // populate the array with any existing buffers
-        while (count < stream.readableLength) {
-            let chunk = stream.read(stream.readableLength);
+        while (count < stream.length) {
+            let chunk = stream.read(stream.length);
             allData.push(chunk);
             count += (<Buffer>chunk).length;
         }

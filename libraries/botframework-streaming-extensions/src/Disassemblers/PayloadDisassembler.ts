@@ -10,13 +10,14 @@ import { Header } from '../Models/Header';
 import { PayloadTypes } from '../Models/PayloadTypes';
 import { StreamDescription } from '../Models/StreamDescription';
 import { PayloadSender } from '../PayloadTransport/PayloadSender';
-import { Duplex as Stream } from 'stream';
+import { Duplex } from 'stream';
 import { StreamWrapper } from './StreamWrapper';
+import { BasicStream } from '..';
 
 export abstract class PayloadDisassembler {
     public abstract payloadType: PayloadTypes;
     private readonly sender: PayloadSender;
-    private stream: Stream;
+    private stream: Duplex;
     private streamLength?: number;
     private readonly id: string;
 
@@ -40,12 +41,12 @@ export abstract class PayloadDisassembler {
     }
 
     protected static serialize<T>(item: T): StreamWrapper {
-        let stream: Stream = new Stream();
+        let stream: BasicStream = new BasicStream();
 
         stream.write(JSON.stringify(item));
         stream.end();
 
-        return new StreamWrapper(stream, stream.readableLength);
+        return new StreamWrapper(stream, stream.length);
     }
 
     public abstract async getStream(): Promise<StreamWrapper>;

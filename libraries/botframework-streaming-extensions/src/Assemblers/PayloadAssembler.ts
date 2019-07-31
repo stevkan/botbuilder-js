@@ -6,18 +6,19 @@
  * Licensed under the MIT License.
  */
 import { Header } from '../Models/Header';
-import { Duplex as Stream } from 'stream';
+import { Duplex } from 'stream';
+import { BasicStream } from '../BasicStream';
 
 export abstract class PayloadAssembler {
     public id: string;
     public end: boolean;
-    private stream: Stream;
+    private stream: BasicStream;
 
     public constructor(id: string) {
         this.id = id;
     }
 
-    public getPayloadStream(): Stream {
+    public getPayloadStream(): BasicStream {
         if (!this.stream) {
             this.stream = this.createPayloadStream();
         }
@@ -25,9 +26,9 @@ export abstract class PayloadAssembler {
         return this.stream;
     }
 
-    public abstract createPayloadStream(): Stream;
+    public abstract createPayloadStream(): BasicStream;
 
-    public onReceive(header: Header, stream?: Stream, contentLength?: number): void {
+    public onReceive(header: Header, stream?: Duplex, contentLength?: number): void {
         this.end = header.End;
     }
 

@@ -5,8 +5,8 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License.
  */
+import { BasicStream } from './BasicStream';
 import { HttpContent, HttpContentStream } from './HttpContentStream';
-import { Duplex as Stream } from 'stream';
 
 export class StreamingRequest {
     /// <summary>
@@ -62,11 +62,11 @@ export class StreamingRequest {
     /// <param name="body">The JSON text to write to the body of the streamingRequest.</param>
     public setBody(body: any): void {
         if (typeof body === 'string') {
-            let stream = new Stream();
+            let stream = new BasicStream();
             stream.write(body, 'utf8');
             this.addStream(new HttpContent({
                 contentType: 'application/json; charset=utf-8',
-                contentLength: stream.readableLength
+                contentLength: stream.length
             },
             // tslint:disable-next-line: align
             stream));

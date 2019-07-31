@@ -5,8 +5,9 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License.
  */
-import { Duplex as Stream } from 'stream';
+import { Duplex } from 'stream';
 import { generateGuid } from './Utilities/protocol-base';
+import { BasicStream } from '.';
 
 export class HttpContentStream {
     public readonly id: string;
@@ -21,14 +22,14 @@ export class HttpContentStream {
 export class HttpContent {
     public headers: IHttpContentHeaders;
 
-    private readonly stream: Stream;
+    private readonly stream: BasicStream;
 
-    constructor(headers: IHttpContentHeaders, stream: Stream) {
+    constructor(headers: IHttpContentHeaders, stream: Duplex) {
         this.headers = headers;
-        this.stream = stream;
+        this.stream = stream as BasicStream;
     }
 
-    public getStream(): Stream {
+    public getStream(): BasicStream {
         return this.stream;
     }
 }

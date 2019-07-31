@@ -7,7 +7,7 @@
  */
 import { ContentStreamAssembler } from '../Assemblers/ContentStreamAssembler';
 import { Header } from '../Models/Header';
-import { Duplex as Stream } from 'stream';
+import { Duplex } from 'stream';
 
 export class StreamManager {
     private readonly activeAssemblers = [];
@@ -30,13 +30,13 @@ export class StreamManager {
         }
     }
 
-    public getPayloadStream(header: Header): Stream {
+    public getPayloadStream(header: Header): Duplex {
         let assembler = this.getPayloadAssembler(header.Id);
 
         return assembler.getPayloadStream();
     }
 
-    public onReceive(header: Header, contentStream: Stream, contentLength: number): void {
+    public onReceive(header: Header, contentStream: Duplex, contentLength: number): void {
         if (this.activeAssemblers[header.Id] === undefined) {
             return;
         } else {
@@ -53,7 +53,7 @@ export class StreamManager {
             this.activeAssemblers.splice(this.activeAssemblers.indexOf(id), 1);
             let targetStream = assembler.getPayloadStream();
             if ((assembler.contentLength !== undefined
-        && targetStream.readableLength < assembler.contentLength)
+        && targetStream.length < assembler.contentLength)
         || !assembler.end) {
                 this.onCancelStream(assembler);
             }

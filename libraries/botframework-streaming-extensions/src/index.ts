@@ -5,6 +5,7 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License.
  */
+export * from './BasicStream';
 export * from './IStreamingTransportClient';
 export * from './IStreamingTransportServer';
 export * from './ProtocolAdapter';

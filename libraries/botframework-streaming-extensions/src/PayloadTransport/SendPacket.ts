@@ -6,14 +6,14 @@
  * Licensed under the MIT License.
  */
 import { Header } from '../Models/Header';
-import { Duplex as Stream } from 'stream';
+import { Duplex } from 'stream';
 
 export class SendPacket {
     public header: Header;
-    public payload: Stream;
+    public payload: Duplex;
     public sentCallback: () => Promise<void>;
 
-    public constructor(header: Header, payload: Stream, sentCallback: () => Promise<void>) {
+    public constructor(header: Header, payload: Duplex, sentCallback: () => Promise<void>) {
         this.header = header;
         this.payload = payload;
         this.sentCallback = sentCallback;

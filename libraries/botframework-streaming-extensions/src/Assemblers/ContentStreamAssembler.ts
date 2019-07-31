@@ -7,8 +7,9 @@
  */
 import { Header } from '../Models/Header';
 import { StreamManager } from '../Payloads/StreamManager';
-import { Duplex as Stream } from 'stream';
+import { Duplex } from 'stream';
 import { PayloadAssembler } from './PayloadAssembler';
+import { BasicStream } from '../BasicStream';
 
 export class ContentStreamAssembler extends PayloadAssembler {
     public contentLength: number;
@@ -22,11 +23,11 @@ export class ContentStreamAssembler extends PayloadAssembler {
         this._streamManager = streamManager;
     }
 
-    public createPayloadStream(): Stream {
-        return new Stream();
+    public createPayloadStream(): BasicStream {
+        return new BasicStream();
     }
 
-    public onReceive(header: Header, stream: Stream, contentLength: number): void {
+    public onReceive(header: Header, stream: Duplex, contentLength: number): void {
         super.onReceive(header, stream, contentLength);
 
         if (header.End) {

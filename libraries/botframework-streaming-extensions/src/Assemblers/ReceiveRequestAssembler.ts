@@ -10,9 +10,10 @@ import { Header } from '../Models/Header';
 import { RequestPayload } from '../Models/RequestPayload';
 import { StreamManager } from '../Payloads/StreamManager';
 import { ReceiveRequest } from '../ReceiveRequest';
-import { Duplex as Stream } from 'stream';
+import { Duplex } from 'stream';
 import { ContentStreamAssembler } from './ContentStreamAssembler';
 import { PayloadAssembler } from './PayloadAssembler';
+import { BasicStream } from '../BasicStream';
 
 export class ReceiveRequestAssembler extends PayloadAssembler {
     private readonly _onCompleted: Function;
@@ -24,11 +25,11 @@ export class ReceiveRequestAssembler extends PayloadAssembler {
         this._onCompleted = onCompleted;
     }
 
-    public createPayloadStream(): Stream {
-        return new Stream();
+    public createPayloadStream(): BasicStream {
+        return new BasicStream();
     }
 
-    public onReceive(header: Header, stream: Stream, contentLength: number): void {
+    public onReceive(header: Header, stream: BasicStream, contentLength: number): void {
         super.onReceive(header, stream, contentLength);
         this.processRequest(stream)
             .then()
@@ -43,8 +44,8 @@ export class ReceiveRequestAssembler extends PayloadAssembler {
         throw new Error('Method not implemented.');
     }
 
-    private async processRequest(stream: Stream): Promise<void> {
-        let s: Buffer = stream.read(stream.readableLength) as Buffer;
+    private async processRequest(stream: BasicStream): Promise<void> {
+        let s: Buffer = stream.read(stream.length) as Buffer;
         if (!s) {
             return;
         }

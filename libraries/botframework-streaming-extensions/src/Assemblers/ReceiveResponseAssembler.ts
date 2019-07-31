@@ -10,9 +10,10 @@ import { Header } from '../Models/Header';
 import { ResponsePayload } from '../Models/ResponsePayload';
 import { StreamManager } from '../Payloads/StreamManager';
 import { ReceiveResponse } from '../ReceiveResponse';
-import { Duplex as Stream } from 'stream';
+import { Duplex } from 'stream';
 import { ContentStreamAssembler } from './ContentStreamAssembler';
 import { PayloadAssembler } from './PayloadAssembler';
+import { BasicStream } from '../BasicStream';
 
 export class ReceiveResponseAssembler extends PayloadAssembler {
     private readonly _onCompleted: Function;
@@ -24,11 +25,11 @@ export class ReceiveResponseAssembler extends PayloadAssembler {
         this._onCompleted = onCompleted;
     }
 
-    public createPayloadStream(): Stream {
-        return new Stream();
+    public createPayloadStream(): BasicStream {
+        return new BasicStream();
     }
 
-    public onReceive(header: Header, stream: Stream, contentLength: number): void {
+    public onReceive(header: Header, stream: BasicStream, contentLength: number): void {
         super.onReceive(header, stream, contentLength);
         this.processResponse(stream)
             .then()
@@ -47,8 +48,8 @@ export class ReceiveResponseAssembler extends PayloadAssembler {
         return (input.charCodeAt(0) === 0xFEFF) ? input.slice(1) : input;
     }
 
-    private async processResponse(stream: Stream): Promise<void> {
-        let s: Buffer = stream.read(stream.readableLength) as Buffer;
+    private async processResponse(stream: BasicStream): Promise<void> {
+        let s: Buffer = stream.read(stream.length) as Buffer;
         if (!s) {
             return;
         }
