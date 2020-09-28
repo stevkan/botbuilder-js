@@ -26,6 +26,16 @@ import { ExtendedUserTokenProvider } from './extendedUserTokenProvider';
 import { TurnContext } from './turnContext';
 
 /**
+ * The callback delegate for application code.
+ *
+ * ``` TypeScript
+ * type BotCallbackHandler = ( turnContext: TurnContext ) => Promise<void>;
+ * ``` 
+ * @param turnContext The turn context.
+ */
+export type BotCallbackHandler = ( turnContext: TurnContext ) => Promise<void>;
+
+/**
  * Signature for a function that can be used to inspect individual activities returned by a bot
  * that's being tested using the `TestAdapter`.
  *
@@ -35,7 +45,7 @@ import { TurnContext } from './turnContext';
  * @param TestActivityInspector.activity The activity being inspected.
  * @param TestActivityInspector.description Text to log in the event of an error.
  */
-export type TestActivityInspector = (activity: Partial<Activity>, description: string) => void;
+export type TestActivityInspector = ( activity: Partial<Activity>, description: string ) => void;
 
 /**
  * Test adapter used for unit tests. This adapter can be used to simulate sending messages from the
@@ -331,6 +341,30 @@ export class TestAdapter extends BotAdapter implements ExtendedUserTokenProvider
     }
 
     /**
+     * @private
+     * INTERNAL: called by a `TestFlow` instance to simulate a user sending a message to the bot.
+     * This will cause the adapters middleware pipe to be run and it's logic to be called.
+     * @param activity Text or activity from user. The current conversation reference [template](#template) will be merged the passed in activity to properly address the activity. Fields specified in the activity override fields in the template.
+     */
+    public receiveActivity( activity: string | Partial<Activity>, callback = null as BotCallbackHandler ): Promise<void> {
+        callback = callback || this.logic;
+        // Initialize request
+        // tslint:disable-next-line:prefer-object-spread
+        const request: any = Object.assign(
+            {},
+            this.template,
+            typeof activity === 'string' ? { type: ActivityTypes.Message, text: activity } : activity
+        );
+        if (!request.type) { request.type = ActivityTypes.Message; }
+        if (!request.id) { request.id = (this.nextId++).toString(); }
+
+        // Create context object and run middleware
+        const context: TurnContext = this.createContext(request);
+
+        return this.runMiddleware(context, callback);
+    }
+
+     /**
      * Creates a turn context.
      *
      * @param request An incoming request body.
@@ -355,8 +389,8 @@ export class TestAdapter extends BotAdapter implements ExtendedUserTokenProvider
      * ```
      * @param userSays Text or activity simulating user input.
      */
-    public send(userSays: string | Partial<Activity>): TestFlow {
-        return new TestFlow(this.processActivity(userSays), this);
+    public send(userSays: string | Partial<Activity>, callback: BotCallbackHandler): TestFlow {
+        return new TestFlow( this.receiveActivity( userSays, callback ), this);
     }
 
     /**
@@ -377,11 +411,13 @@ export class TestAdapter extends BotAdapter implements ExtendedUserTokenProvider
      */
     public test(
         userSays: string | Partial<Activity>,
+        callback: BotCallbackHandler,
         expected: string | Partial<Activity> | ((activity: Partial<Activity>, description?: string) => void),
         description?: string,
         timeout?: number
     ): TestFlow {
-        return this.send(userSays).assertReply(expected, description);
+        return this.send(userSays, callback)
+            .assertReply(expected, description);
     }
 
     /**
@@ -405,14 +441,16 @@ export class TestAdapter extends BotAdapter implements ExtendedUserTokenProvider
         ): any => validateTranscriptActivity(actual, expected, description2);
 
         // Chain all activities in a TestFlow, check if its a user message (send) or a bot reply (assert)
-        return activities.reduce((flow: TestFlow, activity: Partial<Activity>) => {
-            // tslint:disable-next-line:prefer-template
-            const assertDescription = `reply ${description ? ' from ' + description : ''}`;
+        return activities.reduce(
+            (flow: TestFlow, activity: Partial<Activity>) => {
+                // tslint:disable-next-line:prefer-template
+                const assertDescription: string = `reply ${ (description ? ' from ' + description : '') }`;
 
-            return this.isReply(activity)
-                ? flow.assertReply(activityInspector(activity, description), assertDescription, timeout)
-                : flow.send(activity);
-        }, new TestFlow(Promise.resolve(), this));
+                return this.isReply(activity)
+                    ? flow.assertReply(activityInspector(activity, description), assertDescription, timeout)
+                    : flow.send(activity);
+            },
+            new TestFlow( Promise.resolve(), this));
     }
 
     private _userTokens: UserToken[] = [];
@@ -748,13 +786,18 @@ class ExchangeableToken extends UserToken {
  * ```
  */
 export class TestFlow {
+    private readonly _adapter: TestAdapter;
+    private readonly _callback: BotCallbackHandler;
+    private _testTask: Promise<any>;
+
     /**
      * @private
      * INTERNAL: creates a new TestFlow instance.
      * @param previous Promise chain for the current test sequence.
      * @param adapter Adapter under tested.
+     * @param callback The bot turn processing logic to test.
      */
-    constructor(public previous: Promise<void>, private adapter: TestAdapter) {}
+    constructor( private previous: Promise<void>, public adapter: TestAdapter, public callback = null as BotCallbackHandler ) { }
 
     /**
      * Send something to the bot and expects the bot to return with a given reply. This is simply a
@@ -778,11 +821,8 @@ export class TestFlow {
      * Sends something to the bot.
      * @param userSays Text or activity simulating user input.
      */
-    public send(userSays: string | Partial<Activity>): TestFlow {
-        return new TestFlow(
-            this.previous.then(() => this.adapter.processActivity(userSays)),
-            this.adapter
-        );
+    public send( userSays: string | Partial<Activity> ): TestFlow {
+        return new TestFlow( this.previous.then( () => this.adapter.receiveActivity( userSays, this.callback ) ), this.adapter, this.callback);
     }
 
     /**
@@ -860,8 +900,8 @@ export class TestFlow {
                     waitForActivity();
                 });
             }),
-            this.adapter
-        );
+            this.adapter,
+            this.callback);
     }
 
     /**
@@ -901,8 +941,8 @@ export class TestFlow {
                     waitForActivity();
                 });
             }),
-            this.adapter
-        );
+            this.adapter,
+            this.callback);
     }
 
     /**
@@ -941,7 +981,8 @@ export class TestFlow {
                     setTimeout(resolve, ms);
                 });
             }),
-            this.adapter
+            this.adapter,
+            this.callback
         );
     }
 
@@ -950,7 +991,7 @@ export class TestFlow {
      * @param onFulfilled Code to run if the test is currently passing.
      */
     public then(onFulfilled?: () => void): TestFlow {
-        return new TestFlow(this.previous.then(onFulfilled), this.adapter);
+        return new TestFlow(this.previous.then(onFulfilled), this.adapter, this.callback);
     }
 
     /**
@@ -958,7 +999,7 @@ export class TestFlow {
      * @param onRejected Code to run if the test has thrown an error.
      */
     public catch(onRejected?: (reason: any) => void): TestFlow {
-        return new TestFlow(this.previous.catch(onRejected), this.adapter);
+        return new TestFlow(this.previous.catch(onRejected), this.adapter, this.callback);
     }
 
     /**
